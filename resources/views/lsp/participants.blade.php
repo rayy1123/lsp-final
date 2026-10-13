@@ -1,0 +1,224 @@
+@extends('layouts.astro')
+
+@section('title', 'Data Peserta - LSP System')
+
+@section('content')
+<!-- Header Modul Peserta Sertifikasi -->
+<div class="page-header">
+    <div>
+        <h2 class="page-title">Peserta Sertifikasi</h2>
+        <p class="page-desc">Kelola administrasi data asesi dan status rekomendasi hasil uji.</p>
+    </div>
+    <button class="btn btn-primary" onclick="openCreateModal()">
+        <svg style="width: 16px; height: 16px;" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18 7.5v3m0 0v3m0-3h3m-3 0h-3m-2.25-4.125a3.375 3.375 0 11-6.75 0 3.375 3.375 0 016.75 0zM3 19.235v-.11a6.375 6.375 0 0112.75 0v.109A12.318 12.318 0 019.374 21c-2.331 0-4.512-.645-6.374-1.766z" />
+        </svg>
+        Daftarkan Peserta
+    </button>
+</div>
+
+<!-- Bar Pencarian & Filter Efisien -->
+<div style="margin-bottom: 1.5rem; display: flex; justify-content: space-between; align-items: center; gap: 1rem; flex-wrap: wrap;">
+    <form method="GET" action="{{ route('lsp.participants') }}" style="display: flex; gap: 0.5rem; width: 100%; max-width: 480px;">
+        <div style="position: relative; flex: 1;">
+            <svg style="position: absolute; left: 0.85rem; top: 50%; transform: translateY(-50%); width: 16px; height: 16px; color: var(--text-dim);" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z" />
+            </svg>
+            <input type="text" name="search" class="form-control" style="padding-left: 2.35rem;" placeholder="Cari nama, no. reg, skema..." value="{{ $search }}">
+        </div>
+        <button type="submit" class="btn btn-secondary">Cari</button>
+        @if($search)
+            <a href="{{ route('lsp.participants') }}" class="btn btn-secondary" style="color: var(--accent-rose);">Reset</a>
+        @endif
+    </form>
+    <div style="font-size: 0.8rem; color: var(--text-muted);">
+        Total: <b>{{ $participants->total() }}</b> Peserta Terdaftar
+    </div>
+</div>
+
+<!-- Tabel Daftar Peserta -->
+<div class="table-container">
+    <table class="astro-table">
+        <thead>
+            <tr>
+                <th style="width: 140px;">No. Registrasi</th>
+                <th>Nama Peserta &amp; Alamat</th>
+                <th>Kontak</th>
+                <th>Skema Pilihan</th>
+                <th style="width: 170px;">Status Asesmen</th>
+                <th style="width: 150px; text-align: right;">Aksi</th>
+            </tr>
+        </thead>
+        <tbody>
+            @forelse($participants as $p)
+                <tr>
+                    <td>
+                        <span class="badge badge-code" style="font-weight: 700; color: #4338ca;">{{ $p->registration_number }}</span>
+                    </td>
+                    <td>
+                        <div style="display: flex; align-items: center; gap: 0.75rem;">
+                            <div style="width: 34px; height: 34px; border-radius: 50%; background: #e0e7ff; color: #4338ca; display: grid; place-items: center; font-size: 0.85rem; font-weight: 700; flex-shrink: 0;">
+                                {{ strtoupper(substr($p->full_name, 0, 1)) }}
+                            </div>
+                            <div>
+                                <div style="font-weight: 700; color: var(--text-primary);">{{ $p->full_name }}</div>
+                                <div style="font-size: 0.75rem; color: var(--text-muted);">{{ Str::limit($p->address ?: 'Alamat belum diisi', 40) }}</div>
+                            </div>
+                        </div>
+                    </td>
+                    <td>
+                        <div style="font-size: 0.85rem; color: var(--text-primary);">{{ $p->email }}</div>
+                        <div style="font-size: 0.75rem; color: var(--text-muted); font-family: var(--font-mono);">{{ $p->phone_number }}</div>
+                    </td>
+                    <td>
+                        <span style="font-size: 0.85rem; font-weight: 600; color: var(--text-secondary);">
+                            {{ $p->scheme->scheme_name ?? '-' }}
+                        </span>
+                    </td>
+                    <td>
+                        <span class="badge {{ str_contains($p->status, 'Kompeten') && !str_contains($p->status, 'Belum') ? 'badge-kompeten' : 'badge-belum' }}">
+                            <span style="width: 6px; height: 6px; border-radius: 50%; background: currentColor;"></span>
+                            {{ $p->status }}
+                        </span>
+                    </td>
+                    <td style="text-align: right;">
+                        <button class="btn btn-secondary" style="padding: 0.35rem 0.75rem; font-size: 0.8rem;" onclick='openEditModal(@json($p))'>
+                            Edit
+                        </button>
+                        <form action="{{ route('lsp.participants.destroy', $p) }}" method="POST" style="display: inline-block;" onsubmit="return confirm('Apakah Anda yakin ingin menghapus data peserta ini?')">
+                            @csrf
+                            @method('DELETE')
+                            <button type="submit" class="btn btn-danger" style="padding: 0.35rem 0.75rem; font-size: 0.8rem;">
+                                Hapus
+                            </button>
+                        </form>
+                    </td>
+                </tr>
+            @empty
+                <tr>
+                    <td colspan="6" style="text-align: center; color: var(--text-muted); padding: 3rem 1.5rem;">
+                        <div style="font-size: 1.75rem; margin-bottom: 0.5rem; opacity: 0.5;">👥</div>
+                        <div style="font-weight: 600;">Tidak ada data peserta yang ditemukan</div>
+                        <div style="font-size: 0.8rem; margin-top: 0.25rem;">Coba ubah kata kunci pencarian atau daftarkan peserta baru.</div>
+                    </td>
+                </tr>
+            @endforelse
+        </tbody>
+    </table>
+
+    <!-- Pagination Footer -->
+    @if($participants->hasPages())
+        <div style="padding: 1rem 1.5rem; border-top: 1px solid var(--border-subtle); display: flex; justify-content: flex-end;">
+            {{ $participants->links() }}
+        </div>
+    @endif
+</div>
+
+<!-- Modal Form Pendaftaran / Edit Peserta -->
+<div class="modal-overlay" id="participantModal">
+    <div class="modal-box" style="max-width: 580px;">
+        <h3 class="modal-title" id="modalTitle">Daftarkan Peserta Baru</h3>
+        <form id="participantForm" method="POST" action="{{ route('lsp.participants.store') }}">
+            @csrf
+            <div id="methodContainer"></div>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                <div class="form-group">
+                    <label class="form-label">Skema Sertifikasi</label>
+                    <select name="scheme_id" id="scheme_id" class="form-select" required>
+                        <option value="">-- Pilih Skema --</option>
+                        @foreach($schemes as $s)
+                            <option value="{{ $s->id }}">{{ $s->scheme_code }} - {{ $s->scheme_name }}</option>
+                        @endforeach
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">No. Registrasi / NIK</label>
+                    <input type="text" name="registration_number" id="registration_number" class="form-control" placeholder="MISAL: REG-2026-001" required>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Nama Lengkap Asesi</label>
+                <input type="text" name="full_name" id="full_name" class="form-control" placeholder="Nama lengkap peserta..." required>
+            </div>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                <div class="form-group">
+                    <label class="form-label">Email Aktif</label>
+                    <input type="email" name="email" id="email" class="form-control" placeholder="asesi@email.com" required>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Nomor WhatsApp / HP</label>
+                    <input type="text" name="phone_number" id="phone_number" class="form-control" placeholder="08xxxxxxxxxx" required>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Status Hasil Asesmen</label>
+                <select name="status" id="status" class="form-select" required>
+                    <option value="Belum Kompeten">Belum Kompeten</option>
+                    <option value="Kompensasi / Kompeten">Kompensasi / Kompeten</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Alamat Domisili</label>
+                <textarea name="address" id="address" class="form-control" rows="2" placeholder="Alamat domisili lengkap..."></textarea>
+            </div>
+
+            <div style="display: flex; justify-content: flex-end; gap: 0.75rem; margin-top: 1.75rem;">
+                <button type="button" class="btn btn-secondary" onclick="closeModal()">Batal</button>
+                <button type="submit" class="btn btn-primary">Simpan Peserta</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+@push('scripts')
+<script>
+    const modal = document.getElementById('participantModal');
+    const form = document.getElementById('participantForm');
+    const modalTitle = document.getElementById('modalTitle');
+    const methodContainer = document.getElementById('methodContainer');
+
+    function openCreateModal() {
+        modalTitle.innerText = 'Daftarkan Peserta Baru';
+        form.action = "{{ route('lsp.participants.store') }}";
+        methodContainer.innerHTML = '';
+        document.getElementById('scheme_id').value = '';
+        document.getElementById('registration_number').value = '';
+        document.getElementById('full_name').value = '';
+        document.getElementById('email').value = '';
+        document.getElementById('phone_number').value = '';
+        document.getElementById('status').value = 'Belum Kompeten';
+        document.getElementById('address').value = '';
+        modal.classList.add('active');
+    }
+
+    function openEditModal(p) {
+        modalTitle.innerText = 'Edit Data Peserta';
+        form.action = `/lsp/participants/${p.id}`;
+        methodContainer.innerHTML = '@method("PUT")';
+        document.getElementById('scheme_id').value = p.scheme_id;
+        document.getElementById('registration_number').value = p.registration_number;
+        document.getElementById('full_name').value = p.full_name;
+        document.getElementById('email').value = p.email;
+        document.getElementById('phone_number').value = p.phone_number;
+        document.getElementById('status').value = p.status;
+        document.getElementById('address').value = p.address || '';
+        modal.classList.add('active');
+    }
+
+    function closeModal() {
+        modal.classList.remove('active');
+    }
+
+    modal.addEventListener('click', (e) => {
+        if (e.target === modal) closeModal();
+    });
+</script>
+@endpush
+@endsection
