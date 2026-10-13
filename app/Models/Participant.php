@@ -37,4 +37,48 @@ class Participant extends Model
     {
         return $this->belongsTo(CertificationScheme::class, 'scheme_id');
     }
+
+    /**
+     * Relasi ke bukti penyelesaian tugas / ujian asesi.
+     */
+    public function submissions()
+    {
+        return $this->hasMany(TaskSubmission::class, 'participant_id');
+    }
+
+    /**
+     * Total unit tugas yang ada pada skema sertifikasi peserta.
+     */
+    public function totalTasksCount(): int
+    {
+        return $this->scheme ? $this->scheme->tasks()->count() : 0;
+    }
+
+    /**
+     * Jumlah unit tugas yang telah berstatus 'Diterima' oleh asesor.
+     */
+    public function acceptedTasksCount(): int
+    {
+        return $this->submissions()->where('status', 'Diterima')->count();
+    }
+
+    /**
+     * Persentase penyelesaian tugas ujian peserta (0 - 100%).
+     */
+    public function taskProgressPercentage(): int
+    {
+        $total = $this->totalTasksCount();
+        if ($total === 0) return 0;
+        return (int) round(($this->acceptedTasksCount() / $total) * 100);
+    }
+
+    /**
+     * Apakah peserta sudah memenuhi seluruh tugas ujian (100% diterima)?
+     */
+    public function isEligibleForCompetence(): bool
+    {
+        $total = $this->totalTasksCount();
+        if ($total === 0) return false;
+        return $this->acceptedTasksCount() >= $total;
+    }
 }

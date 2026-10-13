@@ -6,11 +6,14 @@
 CREATE DATABASE IF NOT EXISTS `usk_astro` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 USE `usk_astro`;
 
--- 1. TABEL USERS (Autentikasi Administrator)
+-- 1. TABEL USERS (Autentikasi Administrator & Asesi/User)
 CREATE TABLE IF NOT EXISTS `users` (
   `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
   `name` varchar(255) NOT NULL,
   `email` varchar(255) NOT NULL,
+  `role` varchar(50) NOT NULL DEFAULT 'user',
+  `phone_number` varchar(20) DEFAULT NULL,
+  `address` text DEFAULT NULL,
   `email_verified_at` timestamp NULL DEFAULT NULL,
   `password` varchar(255) NOT NULL,
   `remember_token` varchar(100) DEFAULT NULL,
@@ -106,14 +109,49 @@ CREATE TABLE IF NOT EXISTS `lsp_report_settings` (
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+-- 7. TABEL UNIT TUGAS / SKEMA UJIAN (assessment_tasks)
+CREATE TABLE IF NOT EXISTS `assessment_tasks` (
+  `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+  `scheme_id` bigint(20) unsigned NOT NULL,
+  `task_code` varchar(50) DEFAULT NULL,
+  `title` varchar(255) NOT NULL,
+  `description` text DEFAULT NULL,
+  `created_at` timestamp NULL DEFAULT NULL,
+  `updated_at` timestamp NULL DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  KEY `assessment_tasks_scheme_id_foreign` (`scheme_id`),
+  CONSTRAINT `assessment_tasks_scheme_id_foreign` FOREIGN KEY (`scheme_id`) REFERENCES `certification_schemes` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- 8. TABEL SUBMISI / BUKTI PENYELESAIAN TUGAS (task_submissions)
+CREATE TABLE IF NOT EXISTS `task_submissions` (
+  `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+  `task_id` bigint(20) unsigned NOT NULL,
+  `participant_id` bigint(20) unsigned NOT NULL,
+  `user_id` bigint(20) unsigned DEFAULT NULL,
+  `submission_content` text NOT NULL,
+  `status` varchar(50) NOT NULL DEFAULT 'Menunggu Peninjauan',
+  `admin_notes` text DEFAULT NULL,
+  `created_at` timestamp NULL DEFAULT NULL,
+  `updated_at` timestamp NULL DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  KEY `task_submissions_task_id_foreign` (`task_id`),
+  KEY `task_submissions_participant_id_foreign` (`participant_id`),
+  KEY `task_submissions_user_id_foreign` (`user_id`),
+  CONSTRAINT `task_submissions_task_id_foreign` FOREIGN KEY (`task_id`) REFERENCES `assessment_tasks` (`id`) ON DELETE CASCADE,
+  CONSTRAINT `task_submissions_participant_id_foreign` FOREIGN KEY (`participant_id`) REFERENCES `participants` (`id`) ON DELETE CASCADE,
+  CONSTRAINT `task_submissions_user_id_foreign` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE SET NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
 -- ============================================================
 -- DML: DATA AWAL (SEEDING)
 -- ============================================================
 
--- Data Admin (Password: admin123)
-INSERT INTO `users` (`id`, `name`, `email`, `password`, `created_at`, `updated_at`)
-VALUES (1, 'admin', 'admin@lsp.id', '$2y$12$4L6i4x3h3y.kI4Hh1Qv6kOCw9zGk.gM9R4rO7C4p3c7Q9aG8zO7re', NOW(), NOW())
-ON DUPLICATE KEY UPDATE `name` = VALUES(`name`);
+-- Data Admin (admin@gmail.com / Password: 123456)
+DELETE FROM `users` WHERE `email` = 'admin@lsp.id';
+INSERT INTO `users` (`id`, `name`, `email`, `role`, `phone_number`, `password`, `created_at`, `updated_at`)
+VALUES (1, 'admin', 'admin@gmail.com', 'admin', '081299990001', '$2y$12$4L6i4x3h3y.kI4Hh1Qv6kOCw9zGk.gM9R4rO7C4p3c7Q9aG8zO7re', NOW(), NOW())
+ON DUPLICATE KEY UPDATE `email` = 'admin@gmail.com', `role` = 'admin';
 
 -- Data Master Skema Sertifikasi
 INSERT INTO `certification_schemes` (`id`, `scheme_code`, `scheme_name`, `description`, `created_at`, `updated_at`) VALUES
@@ -133,3 +171,11 @@ ON DUPLICATE KEY UPDATE `full_name` = VALUES(`full_name`);
 INSERT INTO `lsp_report_settings` (`id`, `template_name`, `institution_name`, `tuk_name`, `address`, `contact_info`, `document_title`, `document_number`, `tuk_location`, `assessment_date`, `assessment_method`, `closing_statement`, `signer1_role`, `signer1_name`, `signer1_reg_number`, `signer2_city`, `signer2_role`, `signer2_name`, `signer2_reg_number`, `is_active`, `created_at`, `updated_at`) VALUES
 (1, 'Standar LSP USK', 'LEMBAGA SERTIFIKASI PROFESI (LSP) TEKNOLOGI INFORMASI', 'TEMPAT UJI KOMPETENSI (TUK) MANDIRI KOTA BANDA ACEH', 'Gedung ICT Center, Jl. Syech Abdurrauf No. 7, Darussalam, Banda Aceh', 'Email: sekretariat@lsp.id | Website: https://lsp.usk.ac.id | Telp: (0651) 7553205', 'BERITA ACARA & LAPORAN PELAKSANAAN UJI SERTIFIKASI KOMPETENSI (USK)', 'BA-USK/2026/LSP-TI/001', 'TUK Lab Pemrograman Komputer USK', '2026-10-13', 'Demonstrasi Praktik & Tes Tertulis', 'Demikian Berita Acara dan Laporan Hasil Uji Sertifikasi Kompetensi ini dibuat dengan sebenar-benarnya berdasarkan bukti-bukti asesmen yang valid, otentik, terkini, dan memadai.', 'Ketua / Direktur LSP', 'Dr. Ir. T. Fachruddin, M.T.', 'MET.000.002847.2021', 'Banda Aceh', 'Asesor Penguji Kompetensi', 'M. Nur Maulana, S.Kom., M.Cs.', 'MET.000.009384.2023', 1, NOW(), NOW())
 ON DUPLICATE KEY UPDATE `template_name` = VALUES(`template_name`);
+
+-- Data Tugas Ujian / Asesmen Praktik
+INSERT INTO `assessment_tasks` (`id`, `scheme_id`, `task_code`, `title`, `description`, `created_at`, `updated_at`) VALUES
+(1, 1, 'TSK-JWD-01', 'Implementasi CRUD & Validasi Input Web', 'Buat modul entri data berbasis form dengan validasi server-side dan penanganan error responsif sesuai unit kompetensi J.620100.017.02.', NOW(), NOW()),
+(2, 1, 'TSK-JWD-02', 'Proteksi Keamanan Basis Data & Otentikasi', 'Implementasikan hashing password aman dan proteksi injeksi SQL / XSS pada sesi login sesuai unit kompetensi J.620100.023.02.', NOW(), NOW()),
+(3, 2, 'TSK-DMA-01', 'Audit Metrik Konversi & Strategi Promosi Digital', 'Susun laporan ringkas analitik konversi kampanye digital dan target ROI berdasarkan studi kasus UKM binaan.', NOW(), NOW()),
+(4, 3, 'TSK-NSA-01', 'Konfigurasi Layanan Jaringan & Pengujian Keamanan', 'Konfigurasikan alokasi IP, gateway, serta firewall rules untuk mencegah unauthorized access pada server lokal.', NOW(), NOW())
+ON DUPLICATE KEY UPDATE `title` = VALUES(`title`);

@@ -62,7 +62,7 @@
 
                 <!-- Tombol Hapus Template (CRUD: DELETE) -->
                 @if(count($reportSettingsList) > 1)
-                    <button type="button" class="btn btn-danger" style="padding: 0.4rem 0.65rem; font-size: 0.75rem;" onclick="confirmDeleteSetting('{{ route('report.settings.destroy', $reportSetting->id) }}')" title="Hapus template ini">
+                    <button type="button" class="btn btn-danger" style="padding: 0.4rem 0.65rem; font-size: 0.75rem;" onclick="confirmDeleteSetting('{{ route('lsp.report.settings.destroy', $reportSetting->id) }}')" title="Hapus template ini">
                         Hapus Template
                     </button>
                 @endif
@@ -495,7 +495,7 @@
      */
     function openCreateSettingModal() {
         settingModalTitle.innerText = 'Buat Template Dokumen Baru';
-        settingForm.action = "{{ route('report.settings.store') }}";
+        settingForm.action = "{{ route('lsp.report.settings.store') }}";
         settingMethodContainer.innerHTML = '';
         btnSubmitSetting.innerText = 'Simpan Template Baru';
 

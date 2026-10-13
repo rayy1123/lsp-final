@@ -33,4 +33,12 @@ class CertificationScheme extends Model
     {
         return $this->hasMany(Participant::class, 'scheme_id');
     }
+
+    /**
+     * Relasi ke unit tugas / skema ujian asesmen.
+     */
+    public function tasks()
+    {
+        return $this->hasMany(AssessmentTask::class, 'scheme_id');
+    }
 }

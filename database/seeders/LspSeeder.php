@@ -2,9 +2,11 @@
 
 namespace Database\Seeders;
 
+use App\Models\AssessmentTask;
 use App\Models\CertificationScheme;
 use App\Models\LspReportSetting;
 use App\Models\Participant;
+use App\Models\TaskSubmission;
 use App\Models\User;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Hash;
@@ -26,12 +28,26 @@ class LspSeeder extends Seeder
      */
     public function run(): void
     {
-        // 1. Injeksi User Administrator
-        User::firstOrCreate(
-            ['email' => 'admin@lsp.id'],
+        // 1. Injeksi User Administrator & Sample Asesi (User)
+        User::where('email', 'admin@lsp.id')->delete();
+
+        User::updateOrCreate(
+            ['email' => 'admin@gmail.com'],
             [
                 'name' => 'admin',
-                'password' => Hash::make('admin123'),
+                'password' => Hash::make('123456'),
+                'role' => 'admin',
+                'phone_number' => '081299990001',
+            ]
+        );
+
+        User::updateOrCreate(
+            ['email' => 'budi.santoso@example.com'],
+            [
+                'name' => 'Budi Santoso',
+                'password' => Hash::make('user123'),
+                'role' => 'user',
+                'phone_number' => '081234567890',
             ]
         );
 
@@ -119,6 +135,43 @@ class LspSeeder extends Seeder
                 'signer2_name' => 'M. Nur Maulana, S.Kom., M.Cs.',
                 'signer2_reg_number' => 'MET.000.009384.2023',
                 'is_active' => true,
+            ]
+        );
+
+        // 5. Injeksi Master Unit Tugas Ujian Asesmen
+        $t1 = AssessmentTask::firstOrCreate(
+            ['task_code' => 'TSK-JWD-01'],
+            [
+                'scheme_id' => $s1->id,
+                'title' => 'Implementasi CRUD & Validasi Input Web',
+                'description' => 'Buat modul entri data berbasis form dengan validasi server-side dan penanganan error responsif sesuai unit kompetensi J.620100.017.02.',
+            ]
+        );
+
+        $t2 = AssessmentTask::firstOrCreate(
+            ['task_code' => 'TSK-JWD-02'],
+            [
+                'scheme_id' => $s1->id,
+                'title' => 'Proteksi Keamanan Basis Data & Otentikasi',
+                'description' => 'Implementasikan hashing password aman dan proteksi injeksi SQL / XSS pada sesi login sesuai unit kompetensi J.620100.023.02.',
+            ]
+        );
+
+        $t3 = AssessmentTask::firstOrCreate(
+            ['task_code' => 'TSK-DMA-01'],
+            [
+                'scheme_id' => $s2->id,
+                'title' => 'Audit Metrik Konversi & Strategi Promosi Digital',
+                'description' => 'Susun laporan ringkas analitik konversi kampanye digital dan target ROI berdasarkan studi kasus UKM binaan.',
+            ]
+        );
+
+        $t4 = AssessmentTask::firstOrCreate(
+            ['task_code' => 'TSK-NSA-01'],
+            [
+                'scheme_id' => $s3->id,
+                'title' => 'Konfigurasi Layanan Jaringan & Pengujian Keamanan',
+                'description' => 'Konfigurasikan alokasi IP, gateway, serta firewall rules untuk mencegah unauthorized access pada server lokal.',
             ]
         );
     }

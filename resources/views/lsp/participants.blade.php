@@ -45,7 +45,7 @@
                 <th>Nama Peserta &amp; Alamat</th>
                 <th>Kontak</th>
                 <th>Skema Pilihan</th>
-                <th style="width: 170px;">Status Asesmen</th>
+                <th style="width: 220px;">Status &amp; Metrik Tugas</th>
                 <th style="width: 150px; text-align: right;">Aksi</th>
             </tr>
         </thead>
@@ -76,13 +76,34 @@
                         </span>
                     </td>
                     <td>
-                        <span class="badge {{ str_contains($p->status, 'Kompeten') && !str_contains($p->status, 'Belum') ? 'badge-kompeten' : 'badge-belum' }}">
-                            <span style="width: 6px; height: 6px; border-radius: 50%; background: currentColor;"></span>
-                            {{ $p->status }}
-                        </span>
+                        <div style="margin-bottom: 0.35rem;">
+                            <span class="badge {{ str_contains($p->status, 'Kompeten') && !str_contains($p->status, 'Belum') ? 'badge-kompeten' : 'badge-belum' }}">
+                                <span style="width: 6px; height: 6px; border-radius: 50%; background: currentColor;"></span>
+                                {{ $p->status }}
+                            </span>
+                        </div>
+                        <div style="font-size: 0.75rem; color: var(--text-muted); display: flex; align-items: center; gap: 0.35rem; margin-bottom: 0.2rem;">
+                            <span style="font-weight: 700; color: {{ $p->isEligibleForCompetence() ? 'var(--accent-emerald)' : '#64748b' }};">
+                                {{ $p->acceptedTasksCount() }}/{{ $p->totalTasksCount() }}
+                            </span>
+                            <span>Tugas Selesai ({{ $p->taskProgressPercentage() }}%)</span>
+                        </div>
+                        @if($p->totalTasksCount() === 0)
+                            <span style="display: inline-block; font-size: 0.675rem; color: #64748b; font-weight: 600;">
+                                - Belum ada unit soal
+                            </span>
+                        @elseif($p->isEligibleForCompetence())
+                            <span style="display: inline-block; font-size: 0.675rem; color: var(--accent-emerald); font-weight: 700;">
+                                ✓ Syarat Kompeten Terpenuhi
+                            </span>
+                        @else
+                            <span style="display: inline-block; font-size: 0.675rem; color: #b45309; font-weight: 600;">
+                                ○ Sisa {{ $p->totalTasksCount() - $p->acceptedTasksCount() }} tugas belum diterima
+                            </span>
+                        @endif
                     </td>
                     <td style="text-align: right;">
-                        <button class="btn btn-secondary" style="padding: 0.35rem 0.75rem; font-size: 0.8rem;" onclick='openEditModal(@json($p))'>
+                        <button class="btn btn-secondary" style="padding: 0.35rem 0.75rem; font-size: 0.8rem;" onclick='openEditModal(@json($p), {{ $p->totalTasksCount() }}, {{ $p->acceptedTasksCount() }}, {{ $p->isEligibleForCompetence() ? 1 : 0 }})'>
                             Edit
                         </button>
                         <form action="{{ route('lsp.participants.destroy', $p) }}" method="POST" style="display: inline-block;" onsubmit="return confirm('Apakah Anda yakin ingin menghapus data peserta ini?')">
@@ -122,6 +143,31 @@
             @csrf
             <div id="methodContainer"></div>
 
+            <!-- Pemanggilan Data Akun User Terdaftar (Syarat Pendaftaran Skema) -->
+            <div class="form-group" id="userSelectContainer" style="background: #f8fafc; border: 1px solid #e2e8f0; padding: 0.85rem; border-radius: var(--radius-sm); margin-bottom: 1rem;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.35rem;">
+                    <label class="form-label" style="margin-bottom: 0; font-weight: 700; color: #1e293b;">
+                        Pilih Akun User Terdaftar (Panggil Data Otomatis)
+                    </label>
+                    <span class="badge" style="background: #e0e7ff; color: #4338ca; font-size: 0.675rem;">Syarat Wajib</span>
+                </div>
+                <select id="user_select" class="form-select" onchange="autoFillFromUser(this)">
+                    <option value="">-- Pilih Akun User untuk Isi Otomatis --</option>
+                    @foreach($registeredUsers as $ru)
+                        <option value="{{ $ru->id }}"
+                                data-name="{{ $ru->name }}"
+                                data-email="{{ $ru->email }}"
+                                data-phone="{{ $ru->phone_number }}"
+                                data-address="{{ $ru->address }}">
+                            {{ $ru->name }} ({{ $ru->email }})
+                        </option>
+                    @endforeach
+                </select>
+                <div style="font-size: 0.75rem; color: #64748b; margin-top: 0.35rem; line-height: 1.4;">
+                    Syarat pendaftaran skema: Asesi wajib memiliki akun user terdaftar. Memilih akun akan mengisi otomatis Nama, Email, Nomor HP, dan Domisili.
+                </div>
+            </div>
+
             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
                 <div class="form-group">
                     <label class="form-label">Skema Sertifikasi</label>
@@ -156,11 +202,23 @@
                 </div>
             </div>
 
+            <!-- Indikator Metrik Tugas Ujian (Hanya Muncul di Edit Modal) -->
+            <div id="taskMetricContainer" style="background: #f8fafc; border: 1px solid var(--border-subtle); padding: 0.85rem; border-radius: var(--radius-sm); margin-bottom: 1rem;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.35rem;">
+                    <span style="font-size: 0.775rem; font-weight: 700; color: #1e293b;">Indikator Penyelesaian Tugas Ujian:</span>
+                    <span id="taskMetricBadge" class="badge" style="font-size: 0.7rem;"></span>
+                </div>
+                <div style="background: #e2e8f0; border-radius: 999px; height: 6px; width: 100%; overflow: hidden; margin-bottom: 0.4rem;">
+                    <div id="taskMetricBar" style="height: 100%; width: 0%; transition: width 0.3s ease;"></div>
+                </div>
+                <div id="taskMetricNotice" style="font-size: 0.75rem; line-height: 1.4;"></div>
+            </div>
+
             <div class="form-group">
                 <label class="form-label">Status Hasil Asesmen</label>
                 <select name="status" id="status" class="form-select" required>
-                    <option value="Belum Kompeten">Belum Kompeten</option>
-                    <option value="Kompensasi / Kompeten">Kompensasi / Kompeten</option>
+                    <option value="Belum Kompeten" id="optBelum">Belum Kompeten</option>
+                    <option value="Kompensasi / Kompeten" id="optKompeten">Kompensasi / Kompeten</option>
                 </select>
             </div>
 
@@ -183,32 +241,132 @@
     const form = document.getElementById('participantForm');
     const modalTitle = document.getElementById('modalTitle');
     const methodContainer = document.getElementById('methodContainer');
+    const userSelectContainer = document.getElementById('userSelectContainer');
+    const userSelect = document.getElementById('user_select');
+
+    function autoFillFromUser(selectElem) {
+        const opt = selectElem.options[selectElem.selectedIndex];
+        if (!opt || !opt.value) return;
+
+        const name = opt.getAttribute('data-name');
+        const email = opt.getAttribute('data-email');
+        const phone = opt.getAttribute('data-phone');
+        const address = opt.getAttribute('data-address');
+
+        if (name) document.getElementById('full_name').value = name;
+        if (email) document.getElementById('email').value = email;
+        if (phone) document.getElementById('phone_number').value = phone;
+        if (address) document.getElementById('address').value = address;
+    }
 
     function openCreateModal() {
         modalTitle.innerText = 'Daftarkan Peserta Baru';
         form.action = "{{ route('lsp.participants.store') }}";
         methodContainer.innerHTML = '';
+        if (userSelectContainer) userSelectContainer.style.display = 'block';
+        if (userSelect) userSelect.value = '';
         document.getElementById('scheme_id').value = '';
-        document.getElementById('registration_number').value = '';
+        document.getElementById('registration_number').value = '{{ $nextRegNumber ?? "" }}';
         document.getElementById('full_name').value = '';
         document.getElementById('email').value = '';
         document.getElementById('phone_number').value = '';
         document.getElementById('status').value = 'Belum Kompeten';
         document.getElementById('address').value = '';
+
+        const taskMetricContainer = document.getElementById('taskMetricContainer');
+        if (taskMetricContainer) taskMetricContainer.style.display = 'none';
+
+        const optKompeten = document.getElementById('optKompeten');
+        if (optKompeten) {
+            optKompeten.disabled = true;
+            optKompeten.text = 'Kompensasi / Kompeten (Terkunci: Asesi Baru)';
+        }
+
         modal.classList.add('active');
     }
 
-    function openEditModal(p) {
+    function openEditModal(p, totalTasks, acceptedTasks, isEligible) {
         modalTitle.innerText = 'Edit Data Peserta';
         form.action = `/lsp/participants/${p.id}`;
         methodContainer.innerHTML = '@method("PUT")';
+        if (userSelectContainer) userSelectContainer.style.display = 'none';
         document.getElementById('scheme_id').value = p.scheme_id;
         document.getElementById('registration_number').value = p.registration_number;
         document.getElementById('full_name').value = p.full_name;
         document.getElementById('email').value = p.email;
         document.getElementById('phone_number').value = p.phone_number;
-        document.getElementById('status').value = p.status;
         document.getElementById('address').value = p.address || '';
+
+        const taskMetricContainer = document.getElementById('taskMetricContainer');
+        const metricBadge = document.getElementById('taskMetricBadge');
+        const metricBar = document.getElementById('taskMetricBar');
+        const metricNotice = document.getElementById('taskMetricNotice');
+        const optKompeten = document.getElementById('optKompeten');
+        const statusSelect = document.getElementById('status');
+
+        if (taskMetricContainer) taskMetricContainer.style.display = 'block';
+
+        const total = totalTasks !== undefined ? totalTasks : 0;
+        const accepted = acceptedTasks !== undefined ? acceptedTasks : 0;
+        const eligible = isEligible === 1 || isEligible === true;
+        const pct = total > 0 ? Math.round((accepted / total) * 100) : 0;
+
+        if (metricBar) metricBar.style.width = pct + '%';
+
+        if (total === 0) {
+            if (metricBadge) {
+                metricBadge.className = 'badge';
+                metricBadge.style.background = '#f1f5f9';
+                metricBadge.style.color = '#64748b';
+                metricBadge.innerText = '0 Soal Diberikan';
+            }
+            if (metricBar) metricBar.style.background = '#94a3b8';
+            if (metricNotice) {
+                metricNotice.style.color = '#64748b';
+                metricNotice.innerHTML = 'Skema ini belum memiliki unit tugas ujian. Opsi Kompeten dapat dipilih.';
+            }
+            if (optKompeten) {
+                optKompeten.disabled = false;
+                optKompeten.text = 'Kompensasi / Kompeten';
+            }
+            statusSelect.value = p.status;
+        } else if (eligible) {
+            if (metricBadge) {
+                metricBadge.className = 'badge badge-kompeten';
+                metricBadge.style.background = '';
+                metricBadge.style.color = '';
+                metricBadge.innerText = `${accepted}/${total} (100% Selesai)`;
+            }
+            if (metricBar) metricBar.style.background = '#059669';
+            if (metricNotice) {
+                metricNotice.style.color = '#059669';
+                metricNotice.innerHTML = '<b>✓ Syarat Terpenuhi:</b> Seluruh unit tugas ujian telah berstatus Diterima oleh asesor. <b>Opsi Kompeten kini aktif dan dapat disetujui.</b>';
+            }
+            if (optKompeten) {
+                optKompeten.disabled = false;
+                optKompeten.text = 'Kompensasi / Kompeten (Terbuka)';
+            }
+            statusSelect.value = p.status;
+        } else {
+            if (metricBadge) {
+                metricBadge.className = 'badge badge-belum';
+                metricBadge.style.background = '';
+                metricBadge.style.color = '';
+                metricBadge.innerText = `${accepted}/${total} Diterima (${pct}%)`;
+            }
+            if (metricBar) metricBar.style.background = '#f59e0b';
+            if (metricNotice) {
+                metricNotice.style.color = '#b45309';
+                metricNotice.innerHTML = `<b>⚠ Opsi Kompeten Terkunci:</b> Asesi baru menyelesaikan ${accepted} dari ${total} unit tugas yang diberikan. Asesi wajib menyelesaikan dan menerima seluruh unit tugas sebelum opsi Kompeten dapat disetujui.`;
+            }
+            if (optKompeten) {
+                optKompeten.disabled = true;
+                optKompeten.text = 'Kompensasi / Kompeten (Terkunci: Tugas Belum Lengkap)';
+            }
+            // Karena belum memenuhi syarat, paksa status ke Belum Kompeten
+            statusSelect.value = 'Belum Kompeten';
+        }
+
         modal.classList.add('active');
     }
 

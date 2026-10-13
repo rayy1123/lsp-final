@@ -86,9 +86,7 @@
         }
 
         .hero-title span {
-            background: linear-gradient(135deg, var(--accent-primary), #8b5cf6, var(--accent-astro));
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
+            color: #2563eb;
         }
 
         .hero-desc {
@@ -288,21 +286,46 @@
                 <a href="{{ route('lsp.login') }}" class="btn btn-secondary">
                     Masuk Portal
                 </a>
-                <a href="{{ route('lsp.login') }}" class="btn btn-primary">
-                    Admin Login &rarr;
+                <a href="{{ route('lsp.register') }}" class="btn btn-primary">
+                    Daftar Asesi &rarr;
                 </a>
             @endauth
         </div>
     </header>
 
+    <!-- Flash Notification Banner (Login / Logout / Register Notice) -->
+    @if(session('success'))
+        <div style="max-width: 1100px; margin: 1.5rem auto 0; padding: 0 1.5rem;">
+            <div style="border: 1px solid #a7f3d0; background: #ecfdf5; padding: 0.9rem 1.25rem; border-radius: 8px; color: #065f46; font-weight: 600; font-size: 0.875rem; display: flex; align-items: center; justify-content: space-between; gap: 0.75rem; box-shadow: 0 1px 3px rgba(0,0,0,0.06);">
+                <div style="display: flex; align-items: center; gap: 0.65rem;">
+                    <svg style="width: 20px; height: 20px; color: #059669; flex-shrink: 0;" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    <span>{{ session('success') }}</span>
+                </div>
+                @guest
+                    <a href="{{ route('lsp.login') }}" class="btn btn-primary" style="padding: 0.35rem 0.85rem; font-size: 0.8rem; white-space: nowrap;">
+                        Masuk Sekarang &rarr;
+                    </a>
+                @endguest
+            </div>
+        </div>
+    @endif
+    @if(session('error'))
+        <div style="max-width: 1100px; margin: 1.5rem auto 0; padding: 0 1.5rem;">
+            <div style="border: 1px solid #fecdd3; background: #fff1f2; padding: 0.9rem 1.25rem; border-radius: 8px; color: #9f1239; font-weight: 600; font-size: 0.875rem; display: flex; align-items: center; gap: 0.65rem; box-shadow: 0 1px 3px rgba(0,0,0,0.06);">
+                <svg style="width: 20px; height: 20px; color: #e11d48; flex-shrink: 0;" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v3.75m9-.75a9 9 0 11-18 0 9 9 0 0118 0zm-9 3.75h.008v.008H12v-.008z" />
+                </svg>
+                <span>{{ session('error') }}</span>
+            </div>
+        </div>
+    @endif
+
     <!-- Hero Section -->
     <section class="hero-section" id="hero">
         <div style="margin-bottom: 1.5rem;">
             <img src="{{ asset('images/logo.png') }}" alt="Logo LSP" style="width: 90px; height: 90px; object-fit: cover; border-radius: 16px; box-shadow: 0 10px 25px rgba(0,0,0,0.25); background: #000; margin: 0 auto;">
-        </div>
-        <div class="hero-pill">
-            <span style="width: 8px; height: 8px; border-radius: 50%; background: #4f46e5;"></span>
-            Portal Resmi Uji Sertifikasi Kompetensi (USK)
         </div>
         <h1 class="hero-title">
             Standar Kompetensi Nasional untuk <span>Tenaga Kerja Unggul</span>
@@ -313,11 +336,14 @@
         <div class="hero-cta">
             @auth
                 <a href="{{ route('lsp.dashboard') }}" class="btn btn-primary" style="padding: 0.75rem 1.75rem; font-size: 0.95rem;">
-                    Masuk ke Dashboard Asesmen
+                    Buka Dashboard Portal
                 </a>
             @else
-                <a href="{{ route('lsp.login') }}" class="btn btn-primary" style="padding: 0.75rem 1.75rem; font-size: 0.95rem;">
-                    Masuk ke Portal Asesmen
+                <a href="{{ route('lsp.register') }}" class="btn btn-primary" style="padding: 0.75rem 1.75rem; font-size: 0.95rem;">
+                    Daftar Sebagai Asesi Baru &rarr;
+                </a>
+                <a href="{{ route('lsp.login') }}" class="btn btn-secondary" style="padding: 0.75rem 1.5rem; font-size: 0.95rem;">
+                    Login Akun
                 </a>
             @endauth
             <a href="#schemes" class="btn btn-secondary" style="padding: 0.75rem 1.5rem; font-size: 0.95rem;">
@@ -377,7 +403,7 @@
                     </div>
                     <div style="border-top: 1px solid var(--border-subtle); padding-top: 1rem; display: flex; justify-content: space-between; align-items: center;">
                         <span style="font-size: 0.75rem; color: var(--accent-emerald); font-weight: 600;">✓ Terakreditasi BNSP</span>
-                        <a href="{{ route('lsp.login') }}" style="font-size: 0.825rem; font-weight: 600; color: var(--accent-primary); text-decoration: none;">
+                        <a href="{{ route('lsp.register') }}" style="font-size: 0.825rem; font-weight: 600; color: var(--accent-primary); text-decoration: none;">
                             Daftar Asesi &rarr;
                         </a>
                     </div>
@@ -399,7 +425,7 @@
                     </div>
                     <div style="border-top: 1px solid var(--border-subtle); padding-top: 1rem; display: flex; justify-content: space-between; align-items: center;">
                         <span style="font-size: 0.75rem; color: var(--accent-emerald); font-weight: 600;">✓ Terakreditasi BNSP</span>
-                        <a href="{{ route('lsp.login') }}" style="font-size: 0.825rem; font-weight: 600; color: var(--accent-primary); text-decoration: none;">
+                        <a href="{{ route('lsp.register') }}" style="font-size: 0.825rem; font-weight: 600; color: var(--accent-primary); text-decoration: none;">
                             Daftar Asesi &rarr;
                         </a>
                     </div>
@@ -420,7 +446,7 @@
                     </div>
                     <div style="border-top: 1px solid var(--border-subtle); padding-top: 1rem; display: flex; justify-content: space-between; align-items: center;">
                         <span style="font-size: 0.75rem; color: var(--accent-emerald); font-weight: 600;">✓ Terakreditasi BNSP</span>
-                        <a href="{{ route('lsp.login') }}" style="font-size: 0.825rem; font-weight: 600; color: var(--accent-primary); text-decoration: none;">
+                        <a href="{{ route('lsp.register') }}" style="font-size: 0.825rem; font-weight: 600; color: var(--accent-primary); text-decoration: none;">
                             Daftar Asesi &rarr;
                         </a>
                     </div>
@@ -441,7 +467,7 @@
                     </div>
                     <div style="border-top: 1px solid var(--border-subtle); padding-top: 1rem; display: flex; justify-content: space-between; align-items: center;">
                         <span style="font-size: 0.75rem; color: var(--accent-emerald); font-weight: 600;">✓ Terakreditasi BNSP</span>
-                        <a href="{{ route('lsp.login') }}" style="font-size: 0.825rem; font-weight: 600; color: var(--accent-primary); text-decoration: none;">
+                        <a href="{{ route('lsp.register') }}" style="font-size: 0.825rem; font-weight: 600; color: var(--accent-primary); text-decoration: none;">
                             Daftar Asesi &rarr;
                         </a>
                     </div>

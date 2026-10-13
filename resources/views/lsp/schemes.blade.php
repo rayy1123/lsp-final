@@ -7,14 +7,16 @@
 <div class="page-header">
     <div>
         <h2 class="page-title">Skema Sertifikasi</h2>
-        <p class="page-desc">Master data skema standar kompetensi kerja nasional LSP &amp; validasi relasi data asesi.</p>
+        <p class="page-desc">{{ Auth::user()->isAdmin() ? 'Master data skema standar kompetensi kerja nasional LSP & validasi relasi data asesi.' : 'Katalog skema sertifikasi standar kompetensi kerja nasional LSP.' }}</p>
     </div>
-    <button class="btn btn-primary" onclick="openCreateModal()">
-        <svg style="width: 16px; height: 16px;" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.5v15m7.5-7.5h-15" />
-        </svg>
-        Tambah Skema Baru
-    </button>
+    @if(Auth::user()->isAdmin())
+        <button class="btn btn-primary" onclick="openCreateModal()">
+            <svg style="width: 16px; height: 16px;" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.5v15m7.5-7.5h-15" />
+            </svg>
+            Tambah Skema Baru
+        </button>
+    @endif
 </div>
 
 <!-- Bar Pencarian & Validasi Relasi Data -->
@@ -24,7 +26,7 @@
             <svg style="position: absolute; left: 0.85rem; top: 50%; transform: translateY(-50%); width: 16px; height: 16px; color: var(--text-dim);" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z" />
             </svg>
-            <input type="text" name="search" class="form-control" style="padding-left: 2.35rem;" placeholder="Cari kode, nama skema, atau nama/no. reg asesi..." value="{{ $search ?? '' }}">
+            <input type="text" name="search" class="form-control" style="padding-left: 2.35rem;" placeholder="{{ Auth::user()->isAdmin() ? 'Cari kode, nama skema, atau nama/no. reg asesi...' : 'Cari kode atau nama skema sertifikasi...' }}" value="{{ $search ?? '' }}">
         </div>
         <button type="submit" class="btn btn-secondary">Cari</button>
         @if(!empty($search))
@@ -45,8 +47,10 @@
                 <th style="width: 140px;">Kode Skema</th>
                 <th style="width: 250px;">Nama Skema Sertifikasi</th>
                 <th>Deskripsi Standar</th>
-                <th style="width: 150px; text-align: center;">Relasi Peserta (1:N)</th>
-                <th style="width: 150px; text-align: right;">Aksi</th>
+                @if(Auth::user()->isAdmin())
+                    <th style="width: 150px; text-align: center;">Relasi Peserta (1:N)</th>
+                @endif
+                <th style="width: 150px; text-align: right;">{{ Auth::user()->isAdmin() ? 'Aksi Admin' : 'Status' }}</th>
             </tr>
         </thead>
         <tbody>
@@ -62,34 +66,46 @@
                     <td style="color: var(--text-secondary); font-size: 0.85rem; line-height: 1.4;">
                         {{ $scheme->description ?: '-' }}
                     </td>
-                    <td style="text-align: center;">
-                        <!-- Tombol Validasi Hubungan Relasi Data (One-to-Many) -->
-                        <button type="button" class="btn btn-secondary" style="padding: 0.35rem 0.75rem; font-size: 0.775rem; border-radius: 9999px; gap: 0.4rem; background: #f8fafc;" onclick='openRelationModal(@json($scheme))' title="Klik untuk validasi data relasi asesi">
-                            <svg style="width: 14px; height: 14px; color: #4f46e5;" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.19 8.688a4.5 4.5 0 011.242 7.244l-4.5 4.5a4.5 4.5 0 01-6.364-6.364l1.757-1.757m13.35-.622l1.757-1.757a4.5 4.5 0 00-6.364-6.364l-4.5 4.5a4.5 4.5 0 001.242 7.244" />
-                            </svg>
-                            <span><b>{{ $scheme->participants_count }}</b> Asesi</span>
-                        </button>
-                    </td>
-                    <td style="text-align: right;">
-                        <button class="btn btn-secondary" style="padding: 0.35rem 0.75rem; font-size: 0.8rem;" onclick='openEditModal(@json($scheme))'>
-                            Edit
-                        </button>
-                        <form action="{{ route('lsp.schemes.destroy', $scheme) }}" method="POST" style="display: inline-block;" onsubmit="return confirm('Apakah Anda yakin ingin menghapus skema sertifikasi ini? Data peserta terkait akan ikut terhapus (Cascade).')">
-                            @csrf
-                            @method('DELETE')
-                            <button type="submit" class="btn btn-danger" style="padding: 0.35rem 0.75rem; font-size: 0.8rem;">
-                                Hapus
+                    @if(Auth::user()->isAdmin())
+                        <td style="text-align: center;">
+                            <!-- Tombol Validasi Hubungan Relasi Data (One-to-Many) -->
+                            <button type="button" class="btn btn-secondary" style="padding: 0.35rem 0.75rem; font-size: 0.775rem; border-radius: 9999px; gap: 0.4rem; background: #f8fafc;" onclick='openRelationModal(@json($scheme))' title="Klik untuk validasi data relasi asesi">
+                                <svg style="width: 14px; height: 14px; color: #4f46e5;" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.19 8.688a4.5 4.5 0 011.242 7.244l-4.5 4.5a4.5 4.5 0 01-6.364-6.364l1.757-1.757m13.35-.622l1.757-1.757a4.5 4.5 0 00-6.364-6.364l-4.5 4.5a4.5 4.5 0 001.242 7.244" />
+                                </svg>
+                                <span><b>{{ $scheme->participants_count ?? 0 }}</b> Asesi</span>
                             </button>
-                        </form>
+                        </td>
+                    @endif
+                    <td style="text-align: right;">
+                        @if(Auth::user()->isAdmin())
+                            <button class="btn btn-secondary" style="padding: 0.35rem 0.75rem; font-size: 0.8rem;" onclick='openEditModal(@json($scheme))'>
+                                Edit
+                            </button>
+                            <form action="{{ route('lsp.schemes.destroy', $scheme) }}" method="POST" style="display: inline-block;" onsubmit="return confirm('Apakah Anda yakin ingin menghapus skema sertifikasi ini? Data peserta terkait akan ikut terhapus (Cascade).')">
+                                @csrf
+                                @method('DELETE')
+                                <button type="submit" class="btn btn-danger" style="padding: 0.35rem 0.75rem; font-size: 0.8rem;">
+                                    Hapus
+                                </button>
+                            </form>
+                        @else
+                            <form action="{{ route('lsp.apply.scheme') }}" method="POST" style="display: inline-block;">
+                                @csrf
+                                <input type="hidden" name="scheme_id" value="{{ $scheme->id }}">
+                                <button type="submit" class="btn btn-primary" style="padding: 0.35rem 0.75rem; font-size: 0.8rem;">
+                                    Pilih Skema
+                                </button>
+                            </form>
+                        @endif
                     </td>
                 </tr>
             @empty
                 <tr>
-                    <td colspan="5" style="text-align: center; color: var(--text-muted); padding: 3rem 1.5rem;">
+                    <td colspan="{{ Auth::user()->isAdmin() ? 5 : 4 }}" style="text-align: center; color: var(--text-muted); padding: 3rem 1.5rem;">
                         <div style="font-size: 1.75rem; margin-bottom: 0.5rem; opacity: 0.5;">📁</div>
                         <div style="font-weight: 600;">Tidak ada skema sertifikasi yang cocok</div>
-                        <div style="font-size: 0.8rem; margin-top: 0.25rem;">Coba ubah kata kunci pencarian atau klik tombol "Tambah Skema Baru".</div>
+                        <div style="font-size: 0.8rem; margin-top: 0.25rem;">Coba ubah kata kunci pencarian{{ Auth::user()->isAdmin() ? ' atau klik tombol "Tambah Skema Baru"' : '' }}.</div>
                     </td>
                 </tr>
             @endforelse
@@ -97,8 +113,9 @@
     </table>
 </div>
 
+@if(Auth::user()->isAdmin())
 <!-- ========================================================================= -->
-<!-- MODAL: FORM TAMBAH / EDIT SKEMA SERTIFIKASI                               -->
+<!-- MODAL: FORM TAMBAH / EDIT SKEMA SERTIFIKASI (ADMIN ONLY)                  -->
 <!-- ========================================================================= -->
 <div class="modal-overlay" id="schemeModal">
     <div class="modal-box">
@@ -131,7 +148,7 @@
 </div>
 
 <!-- ========================================================================= -->
-<!-- MODAL: VALIDASI HUBUNGAN RELASI DATA (ONE-TO-MANY)                        -->
+<!-- MODAL: VALIDASI HUBUNGAN RELASI DATA (ONE-TO-MANY - ADMIN ONLY)           -->
 <!-- ========================================================================= -->
 <div class="modal-overlay" id="relationModal">
     <div class="modal-box" style="max-width: 680px;">
@@ -289,4 +306,5 @@
     });
 </script>
 @endpush
+@endif
 @endsection

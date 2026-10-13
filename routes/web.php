@@ -13,27 +13,40 @@ use App\Http\Controllers\LspController;
 // UNTUK APA: Menampilkan portal publik resmi LSP USK tanpa langsung memaksakan login
 Route::get('/', [LspController::class, 'landing'])->name('lsp.landing');
 
-// ROUTE: '/login' (Alias Login)
-// UNTUK APA: Titik balik default jika middleware 'auth' menolak akses pengguna yang belum login
+// ROUTE: '/login' & '/register' (Alias Akses Luar)
 Route::get('/login', [LspController::class, 'showLogin'])->name('login');
+Route::post('/login', [LspController::class, 'login'])->name('login.post');
+Route::get('/register', [LspController::class, 'showRegister'])->name('register');
+Route::post('/register', [LspController::class, 'register'])->name('register.post');
 
 // ROUTE GROUP: '/lsp' (Prefix Modul Sistem LSP)
 // UNTUK APA: Mengelompokkan seluruh endpoint aplikasi LSP di bawah prefix URL '/lsp'
 Route::prefix('lsp')->name('lsp.')->group(function () {
 
     // --- SUB-GROUP: AUTENTIKASI ---
-    // UNTUK APA: Menangani antarmuka login, pemrosesan verifikasi akun, dan pemutusan sesi logout
+    // UNTUK APA: Menangani antarmuka login, registrasi asesi, pemrosesan verifikasi akun, dan pemutusan sesi logout
     Route::get('/login', [LspController::class, 'showLogin'])->name('login');
     Route::post('/login', [LspController::class, 'login'])->name('login.post');
+    Route::get('/register', [LspController::class, 'showRegister'])->name('register');
+    Route::post('/register', [LspController::class, 'register'])->name('register.post');
     Route::post('/logout', [LspController::class, 'logout'])->name('logout');
 
     // --- SUB-GROUP: AREA TERPROTEKSI (Middleware 'auth') ---
-    // UNTUK APA: Menjaga akses modul administratif hanya untuk pengguna/admin yang sudah berhasil login
+    // UNTUK APA: Menjaga akses modul hanya untuk pengguna yang sudah berhasil login (Admin & Asesi)
     Route::middleware('auth')->group(function () {
 
         // ROUTE: '/lsp/dashboard'
-        // UNTUK APA: Menampilkan panel kendali metrik statistik asesmen dan riwayat asesi
+        // UNTUK APA: Menampilkan panel kendali metrik statistik (Admin) atau portal status kelulusan (Asesi/User)
         Route::get('/dashboard', [LspController::class, 'dashboard'])->name('dashboard');
+
+        // ROUTE: Update Master Data & Biodata Akun User / Asesi
+        Route::put('/profile', [LspController::class, 'updateProfile'])->name('profile.update');
+
+        // ROUTE: Menu Khusus Hasil & Rekomendasi Asesmen (Asesi)
+        Route::get('/assessment-result', [LspController::class, 'assessmentResult'])->name('assessment.result');
+
+        // ROUTE: Pendaftaran Skema oleh Asesi / User Mandiri
+        Route::post('/apply-scheme', [LspController::class, 'applyScheme'])->name('apply.scheme');
 
         // ROUTE: Master Skema Sertifikasi (CRUD)
         // UNTUK APA: Mengelola master data unit kompetensi skema okupasi nasional
@@ -48,6 +61,12 @@ Route::prefix('lsp')->name('lsp.')->group(function () {
         Route::post('/participants', [LspController::class, 'storeParticipant'])->name('participants.store');
         Route::put('/participants/{participant}', [LspController::class, 'updateParticipant'])->name('participants.update');
         Route::delete('/participants/{participant}', [LspController::class, 'destroyParticipant'])->name('participants.destroy');
+
+        // ROUTE: Manajemen Unit Tugas / Skema Ujian (Admin) & Pengumpulan Tugas (Asesi)
+        Route::post('/tasks', [LspController::class, 'storeTask'])->name('tasks.store');
+        Route::delete('/tasks/{task}', [LspController::class, 'destroyTask'])->name('tasks.destroy');
+        Route::post('/tasks/{task}/submit', [LspController::class, 'submitTask'])->name('tasks.submit');
+        Route::post('/submissions/{submission}/review', [LspController::class, 'reviewSubmission'])->name('submissions.review');
 
         // ROUTE: '/lsp/report' (Laporan USK & CRUD Konfigurasi Cetak)
         // UNTUK APA: Menampilkan, mencetak, serta mengedit isi teks Berita Acara USK (CRUD Dokumen Cetak)

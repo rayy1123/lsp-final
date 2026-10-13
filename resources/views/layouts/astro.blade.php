@@ -42,7 +42,7 @@
                             <svg fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                 <path stroke-linecap="round" stroke-linejoin="round" d="M3.75 6A2.25 2.25 0 016 3.75h2.25A2.25 2.25 0 0110.5 6v2.25a2.25 2.25 0 01-2.25 2.25H6a2.25 2.25 0 01-2.25-2.25V6zM3.75 15.75A2.25 2.25 0 016 13.5h2.25a2.25 2.25 0 012.25 2.25V18a2.25 2.25 0 01-2.25 2.25H6A2.25 2.25 0 013.75 18v-2.25zM13.5 6a2.25 2.25 0 012.25-2.25H18A2.25 2.25 0 0120.25 6v2.25A2.25 2.25 0 0118 10.5h-2.25a2.25 2.25 0 01-2.25-2.25V6zM13.5 15.75a2.25 2.25 0 012.25-2.25H18a2.25 2.25 0 012.25 2.25V18A2.25 2.25 0 0118 20.25h-2.25A2.25 2.25 0 0113.5 18v-2.25z" />
                             </svg>
-                            Dashboard
+                            {{ Auth::user()->isAdmin() ? 'Dashboard Admin' : 'Portal Status Asesi' }}
                         </a>
                     </li>
                     <li>
@@ -53,22 +53,35 @@
                             Skema Sertifikasi
                         </a>
                     </li>
-                    <li>
-                        <a href="{{ route('lsp.participants') }}" class="nav-link {{ request()->routeIs('lsp.participants') ? 'active' : '' }}">
-                            <svg fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" d="M15 19.128a9.38 9.38 0 002.625.372 9.337 9.337 0 004.121-.952 4.125 4.125 0 00-7.533-2.493M15 19.128v-.003c0-1.113-.285-2.16-.786-3.07M15 19.128v.106A12.318 12.318 0 018.624 21c-2.331 0-4.512-.645-6.374-1.766l-.001-.109a6.375 6.375 0 0111.964-3.07M12 6.375a3.375 3.375 0 11-6.75 0 3.375 3.375 0 016.75 0zm8.25 2.25a2.625 2.625 0 11-5.25 0 2.625 2.625 0 015.25 0z" />
-                            </svg>
-                            Peserta Sertifikasi
-                        </a>
-                    </li>
-                    <li>
-                        <a href="{{ route('lsp.report') }}" class="nav-link {{ request()->routeIs('lsp.report') ? 'active' : '' }}">
-                            <svg fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" d="M6.72 13.829c-.24-1.076-.672-2.03-1.272-2.829H4.5v-3.75a3 3 0 013-3h9a3 3 0 013 3v3.75h-.948c-.6 0-1.032.953-1.272 2.829m-10.56 0A5.992 5.992 0 006 18v2.25h12V18c0-1.61-.634-3.074-1.68-4.171m-9.6 0h9.6M6.75 6.75h10.5" />
-                            </svg>
-                            Print Laporan USK
-                        </a>
-                    </li>
+
+                    @if(Auth::user()->isAdmin())
+                        <li>
+                            <a href="{{ route('lsp.participants') }}" class="nav-link {{ request()->routeIs('lsp.participants') ? 'active' : '' }}">
+                                <svg fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M15 19.128a9.38 9.38 0 002.625.372 9.337 9.337 0 004.121-.952 4.125 4.125 0 00-7.533-2.493M15 19.128v-.003c0-1.113-.285-2.16-.786-3.07M15 19.128v.106A12.318 12.318 0 018.624 21c-2.331 0-4.512-.645-6.374-1.766l-.001-.109a6.375 6.375 0 0111.964-3.07M12 6.375a3.375 3.375 0 11-6.75 0 3.375 3.375 0 016.75 0zm8.25 2.25a2.625 2.625 0 11-5.25 0 2.625 2.625 0 015.25 0z" />
+                                </svg>
+                                Peserta Sertifikasi
+                            </a>
+                        </li>
+                        <li>
+                            <a href="{{ route('lsp.report') }}" class="nav-link {{ request()->routeIs('lsp.report') ? 'active' : '' }}">
+                                <svg fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M6.72 13.829c-.24-1.076-.672-2.03-1.272-2.829H4.5v-3.75a3 3 0 013-3h9a3 3 0 013 3v3.75h-.948c-.6 0-1.032.953-1.272 2.829m-10.56 0A5.992 5.992 0 006 18v2.25h12V18c0-1.61-.634-3.074-1.68-4.171m-9.6 0h9.6M6.75 6.75h10.5" />
+                                </svg>
+                                Print Laporan USK
+                            </a>
+                        </li>
+                    @else
+                        <li>
+                            <a href="{{ route('lsp.assessment.result') }}" class="nav-link {{ request()->routeIs('lsp.assessment.result') ? 'active' : '' }}">
+                                <svg fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                </svg>
+                                Hasil Asesmen
+                            </a>
+                        </li>
+                    @endif
+
                     <li style="margin-top: 1rem; border-top: 1px solid var(--border-subtle); padding-top: 0.5rem;">
                         <a href="{{ route('lsp.landing') }}" class="nav-link">
                             <svg fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -80,21 +93,34 @@
                 </ul>
             </div>
 
-            <!-- Bagian Profil User & Tombol Logout -->
-            <div class="sidebar-footer">
-                <div class="user-info">
-                    <div class="avatar">{{ strtoupper(substr(Auth::user()->name ?? 'A', 0, 1)) }}</div>
-                    <div>
-                        <div style="font-size: 0.85rem; font-weight: 700; color: var(--text-primary);">{{ Auth::user()->name ?? 'Administrator' }}</div>
-                        <div style="font-size: 0.75rem; color: var(--text-muted); font-family: var(--font-mono);">{{ Auth::user()->email ?? 'admin@lsp.id' }}</div>
+            <!-- Bagian Profil User & Tombol Logout Proporsional -->
+            <div class="sidebar-footer" style="display: flex; flex-direction: column; gap: 0.85rem; padding-top: 1.25rem; border-top: 1px solid var(--border-subtle);">
+                <div style="display: flex; align-items: flex-start; gap: 0.75rem; width: 100%;">
+                    <div class="avatar" style="flex-shrink: 0; width: 36px; height: 36px; border-radius: var(--radius-full); background: linear-gradient(135deg, #e0e7ff, #c7d2fe); color: var(--accent-primary); display: grid; place-items: center; font-size: 0.85rem; font-weight: 700; border: 1px solid #c7d2fe;">
+                        {{ strtoupper(substr(Auth::user()->name ?? 'A', 0, 1)) }}
+                    </div>
+                    <div style="flex: 1; min-width: 0;">
+                        <div style="display: flex; align-items: center; gap: 0.35rem; flex-wrap: wrap; margin-bottom: 0.15rem;">
+                            <span style="font-size: 0.85rem; font-weight: 700; color: var(--text-primary); word-break: break-word; line-height: 1.25;">
+                                {{ Auth::user()->name ?? 'Pengguna' }}
+                            </span>
+                            <span class="badge" style="font-size: 0.65rem; padding: 0.1rem 0.4rem; {{ Auth::user()->isAdmin() ? 'background: #e0e7ff; color: #4338ca;' : 'background: #ecfdf5; color: #047857;' }}">
+                                {{ Auth::user()->isAdmin() ? 'ADMIN' : 'ASESI' }}
+                            </span>
+                        </div>
+                        <div style="font-size: 0.725rem; color: var(--text-muted); font-family: var(--font-mono); word-break: break-all;">
+                            {{ Auth::user()->email ?? 'user@lsp.id' }}
+                        </div>
                     </div>
                 </div>
-                <form action="{{ route('lsp.logout') }}" method="POST">
+
+                <form action="{{ route('lsp.logout') }}" method="POST" style="width: 100%; margin: 0;" onsubmit="return confirm('Apakah Anda yakin ingin keluar dari sistem LSP?')">
                     @csrf
-                    <button type="submit" class="btn btn-secondary" style="padding: 0.45rem 0.65rem;" title="Keluar / Logout">
-                        <svg style="width: 16px; height: 16px; color: var(--accent-rose);" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <button type="submit" class="btn btn-secondary" style="width: 100%; display: flex; align-items: center; justify-content: center; gap: 0.5rem; padding: 0.55rem 0.75rem; font-size: 0.8rem; border-color: #fecdd3; color: #e11d48; background: #fff1f2; font-weight: 600; border-radius: var(--radius-sm); transition: all 0.15s ease;" title="Keluar dari Sistem LSP">
+                        <svg style="width: 15px; height: 15px;" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.75 9V5.25A2.25 2.25 0 0013.5 3h-6a2.25 2.25 0 00-2.25 2.25v13.5A2.25 2.25 0 007.5 21h6a2.25 2.25 0 002.25-2.25V15M12 9l-3 3m0 0l3 3m-3-3h12.75" />
                         </svg>
+                        <span>Keluar Sistem</span>
                     </button>
                 </form>
             </div>
