@@ -34,6 +34,14 @@ class User extends Authenticatable
     }
 
     /**
+     * Alias method untuk mengecek role asesi.
+     */
+    public function isAsesi(): bool
+    {
+        return $this->isUser();
+    }
+
+    /**
      * Relasi ke data asesi/peserta berdasarkan email.
      */
     public function participant()

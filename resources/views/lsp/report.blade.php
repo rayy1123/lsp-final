@@ -93,7 +93,7 @@
     <!-- KOP SURAT RESMI LEMBAGA SERTIFIKASI PROFESI (Dinamis dari Database) -->
     <div class="report-header">
         <div class="kop-logo">
-            <img src="{{ asset('images/logo.png') }}" alt="Logo LSP" style="width: 68px; height: 68px; object-fit: cover; border-radius: 8px; background: #000; box-shadow: 0 4px 10px rgba(0,0,0,0.15);">
+            <img src="{{ asset('images/logo.png') }}" alt="Logo LSP" style="width: 68px; height: 68px; object-fit: contain; background: transparent;">
         </div>
         <div class="kop-text">
             <h2>{{ $reportSetting->institution_name }}</h2>

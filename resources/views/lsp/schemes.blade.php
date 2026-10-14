@@ -19,6 +19,56 @@
     @endif
 </div>
 
+@if(!Auth::user()->isAdmin() && $currentScheme)
+    <!-- Banner Informasi Skema Aktif yang Sedang Dikerjakan Asesi -->
+    <div style="background: #ffffff; border: 1px solid #c7d2fe; border-left: 4px solid #4f46e5; border-radius: var(--radius-md); padding: 1.5rem; margin-bottom: 2rem; box-shadow: var(--shadow-card);">
+        <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 1rem;">
+            <div>
+                <div style="display: inline-flex; align-items: center; gap: 0.4rem; background: #eef2ff; color: #4338ca; padding: 0.25rem 0.65rem; border-radius: 9999px; font-size: 0.75rem; font-weight: 700; margin-bottom: 0.5rem;">
+                    <span style="width: 6px; height: 6px; border-radius: 50%; background: #4f46e5;"></span>
+                    SKEMA AKTIF YANG SEDANG DIKERJAKAN
+                </div>
+                <h3 style="font-size: 1.25rem; font-weight: 800; color: var(--text-primary); margin-bottom: 0.25rem;">
+                    {{ $currentScheme->scheme_name }}
+                </h3>
+                <div style="font-size: 0.8rem; color: var(--text-muted); display: flex; align-items: center; gap: 0.75rem; flex-wrap: wrap; margin-bottom: 0.75rem;">
+                    <span>Kode Skema: <b style="font-family: var(--font-mono); color: #4338ca;">{{ $currentScheme->scheme_code }}</b></span>
+                    <span>&bull;</span>
+                    <span>No. Registrasi: <b style="font-family: var(--font-mono); color: var(--text-primary);">{{ $myParticipant->registration_number ?? '-' }}</b></span>
+                    <span>&bull;</span>
+                    <span>Status: <b style="color: {{ str_contains($myParticipant->status, 'Kompeten') && !str_contains($myParticipant->status, 'Belum') ? 'var(--accent-emerald)' : '#b45309' }};">{{ $myParticipant->status }}</b></span>
+                </div>
+                <p style="font-size: 0.85rem; color: var(--text-secondary); line-height: 1.5; max-width: 680px; margin: 0;">
+                    {{ $currentScheme->description ?: 'Standar kompetensi kerja nasional resmi.' }}
+                </p>
+            </div>
+            <div style="display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap;">
+                <a href="{{ route('lsp.dashboard') }}#tasksSection" class="btn btn-primary" style="font-size: 0.8rem; padding: 0.45rem 0.85rem;">
+                    Kerjakan Tugas Ujian &rarr;
+                </a>
+                <a href="{{ route('lsp.assessment.result') }}" class="btn btn-secondary" style="font-size: 0.8rem; padding: 0.45rem 0.85rem;">
+                    Hasil Asesmen
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Header Section Pilihan Skema Lainnya -->
+    <div style="margin-bottom: 1.25rem;">
+        <h3 style="font-size: 1.1rem; font-weight: 700; color: var(--text-primary); margin-bottom: 0.25rem;">
+            Pilihan Skema Sertifikasi Lainnya yang Tersedia
+        </h3>
+        <p style="font-size: 0.8rem; color: var(--text-muted); margin: 0;">
+            Daftar di bawah ini mengecualikan skema <b>{{ $currentScheme->scheme_name }}</b> yang sedang aktif Anda ikuti.
+        </p>
+    </div>
+@elseif(!Auth::user()->isAdmin() && !$currentScheme)
+    <!-- Info Asesi Belum Memilih Skema -->
+    <div style="background: #f8fafc; border: 1px solid var(--border-subtle); border-radius: var(--radius-sm); padding: 1rem 1.25rem; margin-bottom: 1.5rem; font-size: 0.85rem; color: var(--text-secondary);">
+        <b style="color: var(--text-primary);">Pemberitahuan:</b> Anda belum terdaftar pada skema sertifikasi apapun. Silakan tentukan dan pilih salah satu skema di bawah ini untuk memulai pendaftaran uji kompetensi.
+    </div>
+@endif
+
 <!-- Bar Pencarian & Validasi Relasi Data -->
 <div style="margin-bottom: 1.5rem; display: flex; justify-content: space-between; align-items: center; gap: 1rem; flex-wrap: wrap;">
     <form method="GET" action="{{ route('lsp.schemes') }}" style="display: flex; gap: 0.5rem; width: 100%; max-width: 520px;">
@@ -35,7 +85,7 @@
     </form>
     <div style="font-size: 0.8rem; color: var(--text-muted); display: flex; align-items: center; gap: 0.5rem;">
         <span style="display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: #4f46e5;"></span>
-        <span>Ditemukan: <b>{{ count($schemes) }}</b> Skema Sertifikasi</span>
+        <span>{{ (!Auth::user()->isAdmin() && $currentScheme) ? 'Tersedia: ' : 'Ditemukan: ' }}<b>{{ count($schemes) }}</b> {{ (!Auth::user()->isAdmin() && $currentScheme) ? 'Skema Lainnya' : 'Skema Sertifikasi' }}</span>
     </div>
 </div>
 
@@ -50,7 +100,7 @@
                 @if(Auth::user()->isAdmin())
                     <th style="width: 150px; text-align: center;">Relasi Peserta (1:N)</th>
                 @endif
-                <th style="width: 150px; text-align: right;">{{ Auth::user()->isAdmin() ? 'Aksi Admin' : 'Status' }}</th>
+                <th style="width: 150px; text-align: right;">{{ Auth::user()->isAdmin() ? 'Aksi Admin' : 'Status / Aksi' }}</th>
             </tr>
         </thead>
         <tbody>
@@ -90,11 +140,11 @@
                                 </button>
                             </form>
                         @else
-                            <form action="{{ route('lsp.apply.scheme') }}" method="POST" style="display: inline-block;">
+                            <form action="{{ route('lsp.apply.scheme') }}" method="POST" style="display: inline-block;" onsubmit="return confirm('{{ $currentScheme ? 'Perhatian: Anda saat ini terdaftar pada skema ' . $currentScheme->scheme_name . '. Apakah Anda yakin ingin beralih ke skema ' . $scheme->scheme_name . '? Data pendaftaran uji kompetensi Anda akan dialihkan.' : 'Konfirmasi pendaftaran ke skema ' . $scheme->scheme_name . '?' }}')">
                                 @csrf
                                 <input type="hidden" name="scheme_id" value="{{ $scheme->id }}">
                                 <button type="submit" class="btn btn-primary" style="padding: 0.35rem 0.75rem; font-size: 0.8rem;">
-                                    Pilih Skema
+                                    {{ $currentScheme ? 'Ganti ke Skema Ini' : 'Pilih Skema' }}
                                 </button>
                             </form>
                         @endif
@@ -104,8 +154,10 @@
                 <tr>
                     <td colspan="{{ Auth::user()->isAdmin() ? 5 : 4 }}" style="text-align: center; color: var(--text-muted); padding: 3rem 1.5rem;">
                         <div style="font-size: 1.75rem; margin-bottom: 0.5rem; opacity: 0.5;">📁</div>
-                        <div style="font-weight: 600;">Tidak ada skema sertifikasi yang cocok</div>
-                        <div style="font-size: 0.8rem; margin-top: 0.25rem;">Coba ubah kata kunci pencarian{{ Auth::user()->isAdmin() ? ' atau klik tombol "Tambah Skema Baru"' : '' }}.</div>
+                        <div style="font-weight: 600;">{{ (!Auth::user()->isAdmin() && $currentScheme) ? 'Tidak ada skema sertifikasi lain yang tersedia' : 'Tidak ada skema sertifikasi yang cocok' }}</div>
+                        <div style="font-size: 0.8rem; margin-top: 0.25rem;">
+                            {{ Auth::user()->isAdmin() ? 'Coba ubah kata kunci pencarian atau klik tombol "Tambah Skema Baru".' : 'Seluruh skema sertifikasi telah Anda ikuti atau sesuai filter pencarian.' }}
+                        </div>
                     </td>
                 </tr>
             @endforelse

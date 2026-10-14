@@ -13,11 +13,12 @@ use App\Http\Controllers\LspController;
 // UNTUK APA: Menampilkan portal publik resmi LSP USK tanpa langsung memaksakan login
 Route::get('/', [LspController::class, 'landing'])->name('lsp.landing');
 
-// ROUTE: '/login' & '/register' (Alias Akses Luar)
+// ROUTE: '/login', '/register', & '/logout' (Alias Akses Luar)
 Route::get('/login', [LspController::class, 'showLogin'])->name('login');
 Route::post('/login', [LspController::class, 'login'])->name('login.post');
 Route::get('/register', [LspController::class, 'showRegister'])->name('register');
 Route::post('/register', [LspController::class, 'register'])->name('register.post');
+Route::match(['get', 'post'], '/logout', [LspController::class, 'logout'])->name('logout');
 
 // ROUTE GROUP: '/lsp' (Prefix Modul Sistem LSP)
 // UNTUK APA: Mengelompokkan seluruh endpoint aplikasi LSP di bawah prefix URL '/lsp'
@@ -29,7 +30,7 @@ Route::prefix('lsp')->name('lsp.')->group(function () {
     Route::post('/login', [LspController::class, 'login'])->name('login.post');
     Route::get('/register', [LspController::class, 'showRegister'])->name('register');
     Route::post('/register', [LspController::class, 'register'])->name('register.post');
-    Route::post('/logout', [LspController::class, 'logout'])->name('logout');
+    Route::match(['get', 'post'], '/logout', [LspController::class, 'logout'])->name('logout');
 
     // --- SUB-GROUP: AREA TERPROTEKSI (Middleware 'auth') ---
     // UNTUK APA: Menjaga akses modul hanya untuk pengguna yang sudah berhasil login (Admin & Asesi)

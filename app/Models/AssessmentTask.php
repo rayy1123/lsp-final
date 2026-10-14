@@ -19,6 +19,11 @@ class AssessmentTask extends Model
         'task_code',
         'title',
         'description',
+        'due_date',
+    ];
+
+    protected $casts = [
+        'due_date' => 'datetime',
     ];
 
     public function scheme()

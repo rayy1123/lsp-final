@@ -28,6 +28,7 @@ class LspController extends Controller
      */
     public function landing()
     {
+        $this->ensureTransparentLogo();
         $schemes = collect();
         $totalSchemes = 0;
         $totalParticipants = 0;
@@ -40,24 +41,31 @@ class LspController extends Controller
 
         if (Schema::hasTable('participants')) {
             $totalParticipants = Participant::count();
-            $totalKompeten = Participant::where('status', 'like', '%Kompeten%')->count();
+            $totalKompeten = Participant::where('status', 'not like', '%Belum%')
+                ->where('status', 'like', '%Kompeten%')
+                ->count();
         }
 
-        return view('lsp.landing', compact('schemes', 'totalSchemes', 'totalParticipants', 'totalKompeten'));
+        $myParticipant = null;
+        if (Auth::check() && !Auth::user()->isAdmin() && Schema::hasTable('participants')) {
+            $myParticipant = Participant::where('email', Auth::user()->email)->first();
+        }
+
+        return view('lsp.landing', compact('schemes', 'totalSchemes', 'totalParticipants', 'totalKompeten', 'myParticipant'));
     }
 
     /**
      * FUNGSI: showLogin()
-     * UNTUK APA: Menampilkan formulir login admin LSP.
-     * ALUR KERJA: Memeriksa session aktif. Jika admin sudah terotentikasi, otomatis dialihkan ke dashboard. Jika belum, tampilkan view login.
+     * UNTUK APA: Menampilkan formulir login admin / pengguna LSP.
+     * ALUR KERJA: Jika sudah ada sesi aktif di tab lain, tetap tampilkan info akun aktif dengan opsi ganti akun/logout.
      */
-    public function showLogin()
+    public function showLogin(Request $request)
     {
         $this->ensureUserColumns();
-        if (Auth::check()) {
-            return redirect()->route('lsp.dashboard');
-        }
-        return view('lsp.login');
+        $this->ensureTransparentLogo();
+
+        $currentUser = Auth::user();
+        return view('lsp.login', compact('currentUser'));
     }
 
     /**
@@ -113,11 +121,10 @@ class LspController extends Controller
     public function showRegister()
     {
         $this->ensureUserColumns();
-        if (Auth::check()) {
-            return redirect()->route('lsp.dashboard');
-        }
+        $this->ensureTransparentLogo();
+        $currentUser = Auth::user();
         $schemes = CertificationScheme::orderBy('scheme_name')->get();
-        return view('lsp.register', compact('schemes'));
+        return view('lsp.register', compact('schemes', 'currentUser'));
     }
 
     /**
@@ -254,6 +261,10 @@ class LspController extends Controller
         }
 
         $participant = Participant::where('email', $user->email)->first();
+
+        if ($participant && $participant->scheme_id == $validated['scheme_id']) {
+            return back()->with('info', 'Anda sudah terdaftar dan sedang mengerjakan skema sertifikasi ini.');
+        }
 
         if ($participant) {
             $participant->update([
@@ -425,8 +436,10 @@ class LspController extends Controller
         $user = Auth::user();
         $totalParticipants = Participant::count();
         $totalSchemes = CertificationScheme::count();
-        $totalKompeten = Participant::where('status', 'like', '%Kompeten%')->count();
-        $totalBelum = Participant::where('status', 'not like', '%Kompeten%')->count();
+        $totalKompeten = Participant::where('status', 'not like', '%Belum%')
+            ->where('status', 'like', '%Kompeten%')
+            ->count();
+        $totalBelum = Participant::where('status', 'like', '%Belum%')->count();
         $recentParticipants = Participant::with('scheme')->latest()->take(5)->get();
 
         // Data Penyelesaian Tugas Ujian untuk Verifikasi di Dashboard Admin
@@ -484,6 +497,8 @@ class LspController extends Controller
     public function schemes(Request $request)
     {
         $search = $request->input('search');
+        $myParticipant = null;
+        $currentScheme = null;
 
         if (Auth::user()->isAdmin()) {
             // Role Admin: Akses master data skema dan inspeksi relasi peserta (1:N)
@@ -501,8 +516,16 @@ class LspController extends Controller
                 });
             }
         } else {
-            // Role User / Asesi: Privasi ketat, jangan pernah load data peserta lain
+            // Role User / Asesi: Ambil data skema yang sedang aktif dikerjakan
+            $myParticipant = Participant::where('email', Auth::user()->email)->with('scheme')->first();
+            $currentScheme = $myParticipant ? $myParticipant->scheme : null;
+
             $query = CertificationScheme::latest();
+
+            // Kecualikan skema yang sedang aktif dikerjakan asesi dari daftar pilihan
+            if ($currentScheme) {
+                $query->where('id', '!=', $currentScheme->id);
+            }
 
             if ($search) {
                 $query->where(function($q) use ($search) {
@@ -514,7 +537,7 @@ class LspController extends Controller
         }
 
         $schemes = $query->get();
-        return view('lsp.schemes', compact('schemes', 'search'));
+        return view('lsp.schemes', compact('schemes', 'search', 'myParticipant', 'currentScheme'));
     }
 
     /**
@@ -809,8 +832,7 @@ class LspController extends Controller
 
         // Kalkulasi statistik
         $totalParticipants = $participants->count();
-        $totalKompeten = $participants->where('status', 'Kompensasi / Kompeten')->count()
-            + $participants->filter(fn($p) => str_contains($p->status, 'Kompeten') && !str_contains($p->status, 'Belum'))->count();
+        $totalKompeten = $participants->filter(fn($p) => str_contains($p->status, 'Kompeten') && !str_contains($p->status, 'Belum'))->count();
         $totalBelum = $totalParticipants - $totalKompeten;
         $passRate = $totalParticipants > 0 ? round(($totalKompeten / $totalParticipants) * 100, 1) : 0;
 
@@ -978,11 +1000,13 @@ class LspController extends Controller
             'task_code' => 'required|string|max:50',
             'title' => 'required|string|max:255',
             'description' => 'required|string',
+            'due_date' => 'nullable|date',
         ], [
             'scheme_id.required' => 'Skema sertifikasi wajib dipilih.',
             'task_code.required' => 'Kode unit tugas wajib diisi.',
             'title.required' => 'Judul unit tugas ujian wajib diisi.',
             'description.required' => 'Uraian petunjuk tugas ujian wajib diisi.',
+            'due_date.date' => 'Format batas waktu pengumpulan tugas tidak valid.',
         ]);
 
         AssessmentTask::create($validated);
@@ -1016,6 +1040,11 @@ class LspController extends Controller
             return back()->withErrors(['error' => 'Anda harus terdaftar pada skema sertifikasi terlebih dahulu untuk mengumpulkan tugas.']);
         }
 
+        // Validasi batas waktu pengumpulan tugas ujian
+        if ($task->due_date && now()->greaterThan(\Carbon\Carbon::parse($task->due_date))) {
+            return back()->withErrors(['error' => 'Batas waktu pengerjaan unit tugas ini telah berakhir pada ' . \Carbon\Carbon::parse($task->due_date)->format('d M Y, H:i') . ' WIB.']);
+        }
+
         $validated = $request->validate([
             'submission_content' => 'required|string|max:2000',
         ], [
@@ -1025,20 +1054,42 @@ class LspController extends Controller
 
         $this->ensureExamTables();
 
-        TaskSubmission::updateOrCreate(
-            [
+        $existing = TaskSubmission::where('task_id', $task->id)
+            ->where('participant_id', $participant->id)
+            ->first();
+
+        if ($existing) {
+            // Pembaruan atau revisi tugas dari asesi (memicu notifikasi perubahan isi di dashboard admin)
+            $revisionCount = ($existing->revision_count ?? 0) + 1;
+            $existing->update([
+                'user_id' => $user->id,
+                'submission_content' => $validated['submission_content'],
+                'status' => 'Pembaruan / Revisi',
+                'is_revised' => true,
+                'revision_count' => $revisionCount,
+                'admin_notes' => null,
+            ]);
+
+            // Jika sebelumnya sudah kompeten tetapi bukti tugas direvisi ulang, status kelulusan dikembalikan ke Belum Kompeten hingga ditinjau kembali
+            if (str_contains($participant->status, 'Kompeten') && !str_contains($participant->status, 'Belum')) {
+                $participant->update(['status' => 'Belum Kompeten']);
+            }
+
+            return back()->with('success', 'Pembaruan tugas ujian berhasil dikirim! Asesor akan menerima notifikasi perubahan isi tugas.');
+        } else {
+            TaskSubmission::create([
                 'task_id' => $task->id,
                 'participant_id' => $participant->id,
-            ],
-            [
                 'user_id' => $user->id,
                 'submission_content' => $validated['submission_content'],
                 'status' => 'Menunggu Peninjauan',
+                'is_revised' => false,
+                'revision_count' => 0,
                 'admin_notes' => null,
-            ]
-        );
+            ]);
 
-        return back()->with('success', 'Tugas ujian berhasil dikumpulkan dan menunggu pengecekan asesor.');
+            return back()->with('success', 'Tugas ujian berhasil dikumpulkan dan menunggu pengecekan asesor.');
+        }
     }
 
     /**
@@ -1057,7 +1108,11 @@ class LspController extends Controller
             'admin_notes' => 'nullable|string|max:500',
         ]);
 
-        $submission->update($validated);
+        $submission->update([
+            'status' => $validated['status'],
+            'admin_notes' => $validated['admin_notes'] ?? null,
+            'is_revised' => false, // Reset penanda notifikasi revisi setelah diperiksa
+        ]);
 
         // Periksa kelulusan seluruh tugas pada skema peserta
         $participant = $submission->participant;
@@ -1091,8 +1146,15 @@ class LspController extends Controller
                     $table->string('task_code', 50)->nullable();
                     $table->string('title');
                     $table->text('description')->nullable();
+                    $table->dateTime('due_date')->nullable();
                     $table->timestamps();
                 });
+            } else {
+                if (!Schema::hasColumn('assessment_tasks', 'due_date')) {
+                    Schema::table('assessment_tasks', function (\Illuminate\Database\Schema\Blueprint $table) {
+                        $table->dateTime('due_date')->nullable()->after('description');
+                    });
+                }
             }
 
             if (!Schema::hasTable('task_submissions')) {
@@ -1103,9 +1165,18 @@ class LspController extends Controller
                     $table->foreignId('user_id')->nullable()->constrained('users')->onDelete('cascade');
                     $table->text('submission_content');
                     $table->string('status', 50)->default('Menunggu Peninjauan');
+                    $table->boolean('is_revised')->default(false);
+                    $table->integer('revision_count')->default(0);
                     $table->text('admin_notes')->nullable();
                     $table->timestamps();
                 });
+            } else {
+                if (!Schema::hasColumn('task_submissions', 'is_revised')) {
+                    Schema::table('task_submissions', function (\Illuminate\Database\Schema\Blueprint $table) {
+                        $table->boolean('is_revised')->default(false)->after('status');
+                        $table->integer('revision_count')->default(0)->after('is_revised');
+                    });
+                }
             }
 
             if (AssessmentTask::count() === 0 && CertificationScheme::count() > 0) {
@@ -1182,6 +1253,69 @@ class LspController extends Controller
         } catch (\Throwable $e) {
             // Kolom sudah ada atau driver mengunci skema
         }
+    }
+
+    /**
+     * Pastikan logo PNG memiliki latar belakang transparan (hapus background hitam)
+     */
+    protected function ensureTransparentLogo(): void
+    {
+        $flag = public_path('images/.logo_cleaned_v1');
+        $src = public_path('images/logo.png');
+
+        if (file_exists($flag) || !file_exists($src) || !extension_loaded('gd')) {
+            return;
+        }
+
+        try {
+            $img = @imagecreatefrompng($src);
+            if (!$img && file_exists(public_path('images/logo.jpeg'))) {
+                $img = @imagecreatefromjpeg(public_path('images/logo.jpeg'));
+            }
+
+            if ($img) {
+                $w = imagesx($img);
+                $h = imagesy($img);
+
+                $out = imagecreatetruecolor($w, $h);
+                imagealphablending($out, false);
+                imagesavealpha($out, true);
+
+                $transparent = imagecolorallocatealpha($out, 0, 0, 0, 127);
+                imagefilledrectangle($out, 0, 0, $w, $h, $transparent);
+
+                for ($x = 0; $x < $w; $x++) {
+                    for ($y = 0; $y < $h; $y++) {
+                        $rgba = imagecolorat($img, $x, $y);
+                        $r = ($rgba >> 16) & 0xFF;
+                        $g = ($rgba >> 8) & 0xFF;
+                        $b = $rgba & 0xFF;
+
+                        $maxVal = max($r, max($g, $b));
+                        if ($maxVal < 35) {
+                            imagesetpixel($out, $x, $y, $transparent);
+                        } else {
+                            if ($maxVal < 65) {
+                                $alpha = (int)(127 * (1 - ($maxVal - 35) / 30));
+                                $color = imagecolorallocatealpha($out, $r, $g, $b, $alpha);
+                            } else {
+                                $color = imagecolorallocatealpha($out, $r, $g, $b, 0);
+                            }
+                            imagesetpixel($out, $x, $y, $color);
+                        }
+                    }
+                }
+
+                @copy($src, public_path('images/logo-black-backup.png'));
+                imagepng($out, $src);
+                imagedestroy($img);
+                imagedestroy($out);
+            }
+        } catch (\Throwable $e) {
+            // Abaikan kegagalan manipulasi gambar secara graceful
+        }
+
+        @file_put_contents($flag, '1');
     }
 }
 

@@ -91,6 +91,45 @@
         </div>
     </div>
 
+    <!-- NOTIFIKASI PERUBAHAN / REVISI TUGAS DARI ASESI (ADMIN) -->
+    @php
+        $revisedSubmissions = $taskSubmissions->filter(function($s) {
+            return $s->is_revised || $s->status === 'Pembaruan / Revisi';
+        });
+    @endphp
+
+    @if($revisedSubmissions->isNotEmpty())
+        <div style="background: #eff6ff; border: 1px solid #bfdbfe; border-left: 4px solid #2563eb; border-radius: var(--radius-sm); padding: 1rem 1.25rem; margin-bottom: 1.5rem; display: flex; align-items: flex-start; gap: 0.85rem;">
+            <svg style="width: 20px; height: 20px; color: #2563eb; flex-shrink: 0; margin-top: 0.1rem;" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+            </svg>
+            <div style="flex: 1;">
+                <div style="display: flex; align-items: center; justify-content: space-between; gap: 0.5rem; flex-wrap: wrap;">
+                    <div style="font-weight: 700; color: #1e40af; font-size: 0.875rem;">
+                        Notifikasi Perubahan Isi Tugas ({{ $revisedSubmissions->count() }} Asesi Memperbarui / Merevisi Jawaban)
+                    </div>
+                    <span class="badge" style="background: #dbeafe; color: #1d4ed8; font-weight: 700; font-size: 0.725rem;">
+                        Perlu Peninjauan Asesor
+                    </span>
+                </div>
+                <div style="font-size: 0.8rem; color: #1e3a8a; margin-top: 0.4rem; line-height: 1.5;">
+                    Asesi berikut telah memperbarui konten bukti pengerjaan tugas ujian mereka:
+                    <ul style="margin: 0.35rem 0 0 1.25rem; padding: 0;">
+                        @foreach($revisedSubmissions->take(5) as $rs)
+                            <li>
+                                <b>{{ $rs->participant->full_name ?? ($rs->user->name ?? 'Asesi') }}</b>
+                                &mdash; Tugas: <code>{{ $rs->task->task_code }}</code> ({{ $rs->task->title ?? '' }})
+                                <span style="color: #4b5563; font-size: 0.75rem;">
+                                    [Revisi ke-{{ $rs->revision_count > 0 ? $rs->revision_count : 1 }}, diperbarui {{ $rs->updated_at->diffForHumans() }}]
+                                </span>
+                            </li>
+                        @endforeach
+                    </ul>
+                </div>
+            </div>
+        </div>
+    @endif
+
     <!-- PANEL 1: PENYELESAIAN TUGAS & VERIFIKASI ASESOR -->
     <div class="table-container" style="margin-bottom: 2rem;">
         <div style="padding: 1.25rem 1.5rem; border-bottom: 1px solid var(--border-subtle); display: flex; justify-content: space-between; align-items: center; background: #ffffff;">
@@ -115,14 +154,26 @@
             </thead>
             <tbody>
                 @forelse($taskSubmissions as $sub)
-                    <tr>
+                    <tr style="{{ $sub->is_revised ? 'background: #f8fafc;' : '' }}">
                         <td>
-                            <div style="font-weight: 700; color: var(--text-primary);">
-                                {{ $sub->participant->full_name ?? ($sub->user->name ?? 'Asesi') }}
+                            <div style="display: flex; align-items: center; gap: 0.4rem; flex-wrap: wrap;">
+                                <div style="font-weight: 700; color: var(--text-primary);">
+                                    {{ $sub->participant->full_name ?? ($sub->user->name ?? 'Asesi') }}
+                                </div>
+                                @if($sub->is_revised)
+                                    <span class="badge" style="background: #dbeafe; color: #1d4ed8; font-weight: 700; font-size: 0.65rem; padding: 0.15rem 0.4rem;" title="Asesi telah memperbarui isi jawaban tugas">
+                                        REVISI KE-{{ $sub->revision_count > 0 ? $sub->revision_count : 1 }}
+                                    </span>
+                                @endif
                             </div>
-                            <div style="font-size: 0.75rem; color: var(--text-muted);">
+                            <div style="font-size: 0.75rem; color: var(--text-muted); margin-top: 0.15rem;">
                                 {{ $sub->participant->registration_number ?? '-' }} &bull; {{ $sub->participant->email ?? $sub->user->email }}
                             </div>
+                            @if($sub->is_revised)
+                                <div style="font-size: 0.7rem; color: #2563eb; font-weight: 600; margin-top: 0.2rem;">
+                                    Diperbarui {{ $sub->updated_at->diffForHumans() }}
+                                </div>
+                            @endif
                         </td>
                         <td>
                             <span class="badge badge-code" style="color: #4338ca;">{{ $sub->task->task_code ?? 'TASK' }}</span>
@@ -142,7 +193,12 @@
                             </button>
                         </td>
                         <td>
-                            @if($sub->status === 'Diterima')
+                            @if($sub->is_revised || $sub->status === 'Pembaruan / Revisi')
+                                <span class="badge" style="background: #eff6ff; color: #1d4ed8; border: 1px solid #bfdbfe;">
+                                    <span style="width: 6px; height: 6px; border-radius: 50%; background: #2563eb;"></span>
+                                    Pembaruan / Revisi
+                                </span>
+                            @elseif($sub->status === 'Diterima')
                                 <span class="badge badge-kompeten">
                                     <span style="width: 6px; height: 6px; border-radius: 50%; background: currentColor;"></span>
                                     Diterima
@@ -197,10 +253,11 @@
         <table class="astro-table">
             <thead>
                 <tr>
-                    <th style="width: 140px;">Kode Tugas</th>
+                    <th style="width: 130px;">Kode Tugas</th>
                     <th>Skema Sertifikasi</th>
                     <th>Judul Unit Ujian &amp; Uraian Petunjuk</th>
-                    <th style="width: 100px; text-align: right;">Aksi</th>
+                    <th style="width: 170px;">Batas Waktu (Deadline)</th>
+                    <th style="width: 90px; text-align: right;">Aksi</th>
                 </tr>
             </thead>
             <tbody>
@@ -221,6 +278,21 @@
                             <div style="font-weight: 700; color: var(--text-primary); font-size: 0.875rem;">{{ $task->title }}</div>
                             <div style="font-size: 0.8rem; color: var(--text-muted); margin-top: 0.2rem; line-height: 1.45;">{{ $task->description }}</div>
                         </td>
+                        <td>
+                            @if($task->due_date)
+                                @php
+                                    $isExpired = now()->greaterThan($task->due_date);
+                                @endphp
+                                <div style="font-size: 0.8rem; font-weight: 600; font-family: var(--font-mono); color: {{ $isExpired ? 'var(--accent-rose)' : 'var(--text-primary)' }};">
+                                    {{ \Carbon\Carbon::parse($task->due_date)->format('d M Y, H:i') }}
+                                </div>
+                                <div style="font-size: 0.725rem; color: {{ $isExpired ? 'var(--accent-rose)' : 'var(--accent-emerald)' }}; margin-top: 0.15rem; font-weight: 600;">
+                                    {{ $isExpired ? 'Telah Berakhir' : 'Sisa ' . now()->diffForHumans(\Carbon\Carbon::parse($task->due_date), true) }}
+                                </div>
+                            @else
+                                <span style="font-size: 0.775rem; color: var(--text-muted); font-style: italic;">Tidak Ada Batas Waktu</span>
+                            @endif
+                        </td>
                         <td style="text-align: right;">
                             <form action="{{ route('lsp.tasks.destroy', $task) }}" method="POST" onsubmit="return confirm('Hapus unit tugas ini?')">
                                 @csrf
@@ -233,7 +305,7 @@
                     </tr>
                 @empty
                     <tr>
-                        <td colspan="4" style="text-align: center; color: var(--text-muted); padding: 2.5rem 1.5rem;">
+                        <td colspan="5" style="text-align: center; color: var(--text-muted); padding: 2.5rem 1.5rem;">
                             <div style="font-weight: 600;">Belum ada data unit tugas/soal ujian</div>
                             <div style="font-size: 0.8rem; margin-top: 0.25rem;">Klik "Tambah Unit Tugas" untuk membuat soal ujian baru untuk asesi.</div>
                         </td>
@@ -459,6 +531,7 @@
                     @forelse($schemeTasks as $task)
                         @php
                             $sub = $task->submissions->first();
+                            $isExpired = $task->due_date && now()->greaterThan($task->due_date);
                         @endphp
                         <tr>
                             <td>
@@ -467,6 +540,16 @@
                             <td>
                                 <div style="font-weight: 700; color: var(--text-primary); font-size: 0.9rem;">{{ $task->title }}</div>
                                 <div style="font-size: 0.825rem; color: var(--text-muted); margin-top: 0.25rem; line-height: 1.45;">{{ $task->description }}</div>
+
+                                @if($task->due_date)
+                                    <div style="margin-top: 0.5rem; display: inline-flex; align-items: center; gap: 0.4rem; font-size: 0.775rem; background: {{ $isExpired ? '#fff1f2' : '#f0fdf4' }}; border: 1px solid {{ $isExpired ? '#fecdd3' : '#bbf7d0' }}; color: {{ $isExpired ? '#be123c' : '#15803d' }}; padding: 0.25rem 0.6rem; border-radius: var(--radius-xs); font-weight: 600;">
+                                        <svg style="width: 14px; height: 14px;" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                        </svg>
+                                        <span>Batas Waktu: {{ \Carbon\Carbon::parse($task->due_date)->format('d M Y, H:i') }} WIB ({{ $isExpired ? 'Telah Berakhir' : 'Sisa ' . now()->diffForHumans(\Carbon\Carbon::parse($task->due_date), true) }})</span>
+                                    </div>
+                                @endif
+
                                 @if($sub && $sub->admin_notes)
                                     <div style="margin-top: 0.5rem; background: #fff1f2; border: 1px solid #fecdd3; padding: 0.5rem 0.75rem; border-radius: var(--radius-sm); font-size: 0.775rem; color: #be123c;">
                                         <b>Catatan Asesor:</b> {{ $sub->admin_notes }}
@@ -477,6 +560,11 @@
                                 @if(!$sub)
                                     <span class="badge" style="background: #f1f5f9; color: #64748b; border: 1px solid #cbd5e1;">
                                         Belum Dikumpulkan
+                                    </span>
+                                @elseif($sub->is_revised || $sub->status === 'Pembaruan / Revisi')
+                                    <span class="badge" style="background: #eff6ff; color: #1d4ed8; border: 1px solid #bfdbfe;">
+                                        <span style="width: 6px; height: 6px; border-radius: 50%; background: #2563eb;"></span>
+                                        Revisi Dikirim (Tinjauan Asesor)
                                     </span>
                                 @elseif($sub->status === 'Diterima')
                                     <span class="badge badge-kompeten">
@@ -495,9 +583,15 @@
                                 @endif
                             </td>
                             <td style="text-align: right;">
-                                <button class="btn btn-primary" style="padding: 0.35rem 0.75rem; font-size: 0.8rem;" onclick='openSubmitTaskModal({{ $task->id }}, "{{ addslashes($task->title) }}", "{{ addslashes($sub->submission_content ?? '') }}")'>
-                                    {{ $sub ? 'Update Jawaban' : 'Kumpulkan Tugas' }}
-                                </button>
+                                @if($isExpired)
+                                    <span class="badge" style="background: #fff1f2; color: #e11d48; border: 1px solid #fecdd3; padding: 0.35rem 0.6rem; font-size: 0.75rem;">
+                                        Waktu Berakhir
+                                    </span>
+                                @else
+                                    <button class="btn btn-primary" style="padding: 0.35rem 0.75rem; font-size: 0.8rem;" onclick='openSubmitTaskModal({{ $task->id }}, "{{ addslashes($task->title) }}", "{{ addslashes($sub->submission_content ?? '') }}")'>
+                                        {{ $sub ? 'Update Jawaban / Revisi' : 'Kumpulkan Tugas' }}
+                                    </button>
+                                @endif
                             </td>
                         </tr>
                     @empty
@@ -522,7 +616,7 @@
                 Pilih salah satu skema sertifikasi di bawah ini untuk memulai pendaftaran uji kompetensi asesi Anda.
             </p>
 
-            <form action="{{ route('lsp.apply.scheme') }}" method="POST" style="max-width: 480px; display: flex; gap: 0.5rem;">
+            <form action="{{ route('lsp.apply.scheme') }}" method="POST" style="max-width: 480px; display: flex; gap: 0.5rem;" onsubmit="return confirm('Konfirmasi pendaftaran ke skema sertifikasi ini?')">
                 @csrf
                 <select name="scheme_id" class="form-select" required>
                     <option value="">-- Pilih Skema Sertifikasi --</option>
@@ -558,7 +652,7 @@
                         {{ $s->description ?: 'Standar okupasi keahlian nasional resmi.' }}
                     </p>
                 </div>
-                <form action="{{ route('lsp.apply.scheme') }}" method="POST">
+                <form action="{{ route('lsp.apply.scheme') }}" method="POST" onsubmit="return confirm('Apakah Anda yakin ingin berganti ke skema sertifikasi ini? Data pendaftaran uji kompetensi Anda akan dialihkan ke skema baru.')">
                     @csrf
                     <input type="hidden" name="scheme_id" value="{{ $s->id }}">
                     <button type="submit" class="btn btn-secondary" style="width: 100%; font-size: 0.825rem;" {{ ($myParticipant && $myParticipant->scheme_id == $s->id) ? 'disabled' : '' }}>
@@ -595,8 +689,19 @@
                 </div>
 
                 <div class="form-group">
-                    <label class="form-label">Password Baru (Opsional)</label>
-                    <input type="password" name="password" class="form-control" placeholder="Kosongkan jika tidak ingin mengubah password" minlength="6">
+                    <label class="form-label" for="edit_profile_password">Password Baru (Opsional)</label>
+                    <div style="position: relative;">
+                        <input type="password" name="password" id="edit_profile_password" class="form-control" placeholder="Kosongkan jika tidak ingin mengubah password" minlength="6" style="padding-right: 2.75rem;">
+                        <button type="button" onclick="togglePassword('edit_profile_password', this)" style="position: absolute; right: 0.75rem; top: 50%; transform: translateY(-50%); background: none; border: none; cursor: pointer; color: var(--text-muted); padding: 0.25rem; display: flex; align-items: center;" aria-label="Lihat password" title="Lihat password">
+                            <svg class="eye-open" style="width: 18px; height: 18px;" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178z" />
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                            </svg>
+                            <svg class="eye-closed" style="width: 18px; height: 18px; display: none;" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3.98 8.223A10.477 10.477 0 001.934 12C3.226 16.338 7.244 19.5 12 19.5c.993 0 1.953-.138 2.863-.395M6.228 6.228A10.45 10.45 0 0112 4.5c4.756 0 8.773 3.162 10.065 7.498a10.523 10.523 0 01-4.293 5.774M6.228 6.228L3 3m3.228 3.228l3.65 3.65m7.894 7.894L21 21m-3.228-3.228l-3.65-3.65m0 0a3 3 0 10-4.243-4.243m4.242 4.242L9.88 9.88" />
+                            </svg>
+                        </button>
+                    </div>
                     <small style="color: var(--text-muted); font-size: 0.725rem;">Minimal 6 karakter. Isi hanya jika ingin memperbarui kata sandi login Anda.</small>
                 </div>
 
@@ -672,6 +777,12 @@
                 <div class="form-group">
                     <label class="form-label">Petunjuk &amp; Uraian Soal Ujian</label>
                     <textarea name="description" class="form-control" rows="4" placeholder="Jelaskan petunjuk teknis pengerjaan tugas ujian praktik yang harus dipenuhi oleh asesi..." required></textarea>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Batas Waktu Pengumpulan (Deadline Opsional)</label>
+                    <input type="datetime-local" name="due_date" class="form-control">
+                    <small style="color: var(--text-muted); font-size: 0.725rem;">Tentukan batas tanggal &amp; jam akhir penyerahan tugas ujian bagi asesi.</small>
                 </div>
 
                 <div style="display: flex; justify-content: flex-end; gap: 0.75rem; margin-top: 1.5rem;">
@@ -803,6 +914,22 @@
             if (e.target === modal) modal.classList.remove('active');
         });
     });
+
+    function togglePassword(inputId, btn) {
+        var input = document.getElementById(inputId);
+        if (!input) return;
+        var isPass = input.type === 'password';
+        input.type = isPass ? 'text' : 'password';
+
+        var eyeOpen = btn.querySelector('.eye-open');
+        var eyeClosed = btn.querySelector('.eye-closed');
+        if (eyeOpen && eyeClosed) {
+            eyeOpen.style.display = isPass ? 'none' : 'block';
+            eyeClosed.style.display = isPass ? 'block' : 'none';
+        }
+        btn.setAttribute('aria-label', isPass ? 'Sembunyikan password' : 'Lihat password');
+        btn.setAttribute('title', isPass ? 'Sembunyikan password' : 'Lihat password');
+    }
 </script>
 @endpush
 @endsection

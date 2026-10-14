@@ -118,7 +118,7 @@ class LspSeeder extends Seeder
             ['template_name' => 'Standar LSP USK'],
             [
                 'institution_name' => 'LEMBAGA SERTIFIKASI PROFESI (LSP) TEKNOLOGI INFORMASI',
-                'tuk_name' => 'TEMPAT UJI KOMPETENSI (TUK) MANDIRI KOTA BANDA ACEH',
+                'tuk_name' => 'TEMPAT UJI KOMPETENSI (TUK) MANDIRI KOTA JAKARTA TIMUR',
                 'address' => 'Gedung ICT Center, Jl. Syech Abdurrauf No. 7, Darussalam, Banda Aceh',
                 'contact_info' => 'Email: sekretariat@lsp.id | Website: https://lsp.usk.ac.id | Telp: (0651) 7553205',
                 'document_title' => 'BERITA ACARA & LAPORAN PELAKSANAAN UJI SERTIFIKASI KOMPETENSI (USK)',

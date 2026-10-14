@@ -14,10 +14,8 @@
         .brand-logo-img {
             width: 38px;
             height: 38px;
-            object-fit: cover;
-            border-radius: var(--radius-sm);
-            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15);
-            background: #000;
+            object-fit: contain;
+            background: transparent;
         }
     </style>
 </head>
@@ -135,7 +133,7 @@
                 </div>
                 <div>
                     <a href="{{ route('lsp.landing') }}" class="btn btn-secondary" style="font-size: 0.75rem; padding: 0.35rem 0.75rem;">
-                        &larr; Lihat Landing Page
+                        Lihat Landing Page &rarr;
                     </a>
                 </div>
             </div>
@@ -164,6 +162,43 @@
             @yield('content')
         </main>
     </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            document.querySelectorAll('img[src*="logo.png"], img[src*="logo.jpeg"]').forEach(function(img) {
+                img.style.background = 'transparent';
+                var temp = new Image();
+                temp.crossOrigin = 'anonymous';
+                temp.src = img.src;
+                temp.onload = function() {
+                    try {
+                        var c = document.createElement('canvas');
+                        c.width = temp.naturalWidth || temp.width;
+                        c.height = temp.naturalHeight || temp.height;
+                        var ctx = c.getContext('2d');
+                        ctx.drawImage(temp, 0, 0);
+                        var imgData = ctx.getImageData(0, 0, c.width, c.height);
+                        var d = imgData.data;
+                        var modified = false;
+                        for (var i = 0; i < d.length; i += 4) {
+                            var maxV = Math.max(d[i], d[i+1], d[i+2]);
+                            if (maxV < 35) {
+                                d[i+3] = 0;
+                                modified = true;
+                            } else if (maxV < 65) {
+                                d[i+3] = Math.round(255 * ((maxV - 35) / 30));
+                                modified = true;
+                            }
+                        }
+                        if (modified) {
+                            ctx.putImageData(imgData, 0, 0);
+                            img.src = c.toDataURL('image/png');
+                        }
+                    } catch(e) {}
+                };
+            });
+        });
+    </script>
 
     @stack('scripts')
 </body>

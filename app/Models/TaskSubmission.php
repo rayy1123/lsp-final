@@ -20,7 +20,14 @@ class TaskSubmission extends Model
         'user_id',
         'submission_content',
         'status',
+        'is_revised',
+        'revision_count',
         'admin_notes',
+    ];
+
+    protected $casts = [
+        'is_revised' => 'boolean',
+        'revision_count' => 'integer',
     ];
 
     public function task()
