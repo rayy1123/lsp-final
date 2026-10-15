@@ -28,7 +28,7 @@
                 <div class="brand">
                     <img src="{{ asset('images/logo.png') }}" alt="Logo LSP" class="brand-logo-img">
                     <div class="brand-text">
-                        <h1>LSP CERT</h1>
+                        <h1>Dashboard</h1>
                         <span>PORTAL SERTIFIKASI</span>
                     </div>
                 </div>
@@ -40,7 +40,7 @@
                             <svg fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                 <path stroke-linecap="round" stroke-linejoin="round" d="M3.75 6A2.25 2.25 0 016 3.75h2.25A2.25 2.25 0 0110.5 6v2.25a2.25 2.25 0 01-2.25 2.25H6a2.25 2.25 0 01-2.25-2.25V6zM3.75 15.75A2.25 2.25 0 016 13.5h2.25a2.25 2.25 0 012.25 2.25V18a2.25 2.25 0 01-2.25 2.25H6A2.25 2.25 0 013.75 18v-2.25zM13.5 6a2.25 2.25 0 012.25-2.25H18A2.25 2.25 0 0120.25 6v2.25A2.25 2.25 0 0118 10.5h-2.25a2.25 2.25 0 01-2.25-2.25V6zM13.5 15.75a2.25 2.25 0 012.25-2.25H18a2.25 2.25 0 012.25 2.25V18A2.25 2.25 0 0118 20.25h-2.25A2.25 2.25 0 0113.5 18v-2.25z" />
                             </svg>
-                            {{ Auth::user()->isAdmin() ? 'Dashboard Admin' : 'Portal Status Asesi' }}
+                            {{ Auth::user()->isAdmin() ? 'Dashboard Admin' : 'Selamat Datang' }}
                         </a>
                     </li>
                     <li>
@@ -94,7 +94,7 @@
             <!-- Bagian Profil User & Tombol Logout Proporsional -->
             <div class="sidebar-footer" style="display: flex; flex-direction: column; gap: 0.85rem; padding-top: 1.25rem; border-top: 1px solid var(--border-subtle);">
                 <div style="display: flex; align-items: flex-start; gap: 0.75rem; width: 100%;">
-                    <div class="avatar" style="flex-shrink: 0; width: 36px; height: 36px; border-radius: var(--radius-full); background: linear-gradient(135deg, #e0e7ff, #c7d2fe); color: var(--accent-primary); display: grid; place-items: center; font-size: 0.85rem; font-weight: 700; border: 1px solid #c7d2fe;">
+                    <div class="avatar" style="flex-shrink: 0;">
                         {{ strtoupper(substr(Auth::user()->name ?? 'A', 0, 1)) }}
                     </div>
                     <div style="flex: 1; min-width: 0;">
@@ -102,7 +102,7 @@
                             <span style="font-size: 0.85rem; font-weight: 700; color: var(--text-primary); word-break: break-word; line-height: 1.25;">
                                 {{ Auth::user()->name ?? 'Pengguna' }}
                             </span>
-                            <span class="badge" style="font-size: 0.65rem; padding: 0.1rem 0.4rem; {{ Auth::user()->isAdmin() ? 'background: #e0e7ff; color: #4338ca;' : 'background: #ecfdf5; color: #047857;' }}">
+                            <span class="badge" style="font-size: 0.65rem; padding: 0.1rem 0.4rem; {{ Auth::user()->isAdmin() ? 'background: var(--accent-primary-light); color: var(--accent-primary); border: 1px solid var(--accent-primary-border);' : 'background: var(--accent-emerald-bg); color: var(--accent-emerald); border: 1px solid var(--accent-emerald-border);' }}">
                                 {{ Auth::user()->isAdmin() ? 'ADMIN' : 'ASESI' }}
                             </span>
                         </div>
@@ -112,7 +112,7 @@
                     </div>
                 </div>
 
-                <form action="{{ route('lsp.logout') }}" method="POST" style="width: 100%; margin: 0;" onsubmit="return confirm('Apakah Anda yakin ingin keluar dari sistem LSP?')">
+                <form action="{{ route('lsp.logout') }}" method="POST" style="width: 100%; margin: 0;" onsubmit="return confirm('Konfirmasi Keluar: Apakah Anda yakin ingin keluar dari sistem LSP?')">
                     @csrf
                     <button type="submit" class="btn btn-secondary" style="width: 100%; display: flex; align-items: center; justify-content: center; gap: 0.5rem; padding: 0.55rem 0.75rem; font-size: 0.8rem; border-color: #fecdd3; color: #e11d48; background: #fff1f2; font-weight: 600; border-radius: var(--radius-sm); transition: all 0.15s ease;" title="Keluar dari Sistem LSP">
                         <svg style="width: 15px; height: 15px;" fill="none" viewBox="0 0 24 24" stroke="currentColor">

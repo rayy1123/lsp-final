@@ -21,7 +21,7 @@
     <div style="background: #ffffff; border: 1px solid var(--border-subtle); border-radius: var(--radius-md); padding: 2rem; box-shadow: var(--shadow-card); margin-bottom: 2rem;">
         <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 1.5rem; border-bottom: 1px solid var(--border-subtle); padding-bottom: 1.5rem; margin-bottom: 1.5rem;">
             <div>
-                <span class="badge badge-code" style="color: #4338ca; font-size: 0.85rem; padding: 0.25rem 0.65rem;">
+                <span class="badge badge-code" style="color: var(--accent-primary); font-size: 0.85rem; padding: 0.25rem 0.65rem;">
                     {{ $participant->registration_number }}
                 </span>
                 <h3 style="font-size: 1.5rem; font-weight: 800; color: var(--text-primary); margin-top: 0.5rem;">
@@ -36,7 +36,7 @@
                 <div style="font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase; font-weight: 700; letter-spacing: 0.05em;">
                     Keputusan Asesor Penguji
                 </div>
-                <span class="badge {{ str_contains($participant->status, 'Kompeten') && !str_contains($participant->status, 'Belum') ? 'badge-kompeten' : 'badge-belum' }}" style="font-size: 1rem; padding: 0.5rem 1.25rem; font-weight: 700;">
+                <span class="badge {{ str_contains($participant->status, 'Kompeten') && !str_contains($participant->status, 'Belum') ? 'badge-kompeten' : (str_contains($participant->status, 'Pending') ? 'badge-pending' : 'badge-belum') }}" style="font-size: 1rem; padding: 0.5rem 1.25rem; font-weight: 700;">
                     <span style="width: 8px; height: 8px; border-radius: 50%; background: currentColor;"></span>
                     {{ $participant->status }}
                 </span>
@@ -55,7 +55,7 @@
                     </span>
                 </div>
                 <div>
-                    <span class="badge {{ $participant->isEligibleForCompetence() ? 'badge-kompeten' : 'badge-belum' }}" style="font-size: 0.8rem; padding: 0.35rem 0.75rem;">
+                    <span class="badge {{ $participant->isEligibleForCompetence() ? 'badge-kompeten' : ($participant->status === 'Pending' ? 'badge-pending' : 'badge-belum') }}" style="font-size: 0.8rem; padding: 0.35rem 0.75rem;">
                         {{ $participant->acceptedTasksCount() }} / {{ $participant->totalTasksCount() }} Unit Diterima ({{ $participant->taskProgressPercentage() }}%)
                     </span>
                 </div>
@@ -96,6 +96,22 @@
                     </div>
                 </div>
             </div>
+        @elseif(str_contains($participant->status, 'Pending'))
+            <div style="background: var(--accent-sky-bg); border: 1px solid var(--accent-sky-border); border-radius: var(--radius-sm); padding: 1.25rem; display: flex; gap: 1rem; align-items: flex-start; margin-bottom: 1.5rem;">
+                <div style="color: var(--accent-sky); font-size: 1.25rem; flex-shrink: 0; line-height: 1;">
+                    <svg style="width: 24px; height: 24px;" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                </div>
+                <div>
+                    <div style="font-weight: 700; color: var(--accent-sky); font-size: 0.95rem; margin-bottom: 0.25rem;">
+                        Status: Menunggu Penilaian Asesor (Pending)
+                    </div>
+                    <div style="font-size: 0.85rem; color: var(--text-secondary); line-height: 1.5;">
+                        Pendaftaran uji kompetensi Anda telah tercatat. Silakan selesaikan seluruh pengumpulan tugas ujian praktik di bawah ini. Status rekomendasi akhir (Kompeten / Belum Kompeten) akan diputuskan oleh asesor penguji setelah seluruh bukti dan portofolio dinilai.
+                    </div>
+                </div>
+            </div>
         @else
             <div style="background: var(--accent-amber-bg); border: 1px solid var(--accent-amber-border); border-radius: var(--radius-sm); padding: 1.25rem; display: flex; gap: 1rem; align-items: flex-start; margin-bottom: 1.5rem;">
                 <div style="color: var(--accent-amber); font-size: 1.25rem; flex-shrink: 0; line-height: 1;">
@@ -105,20 +121,28 @@
                 </div>
                 <div>
                     <div style="font-weight: 700; color: var(--accent-amber); font-size: 0.95rem; margin-bottom: 0.25rem;">
-                        Rekomendasi: Belum Kompeten (BK) / Dalam Proses Pengujian
+                        Rekomendasi: Belum Kompeten (BK)
                     </div>
                     <div style="font-size: 0.85rem; color: var(--text-secondary); line-height: 1.5;">
-                        Hasil uji kompetensi belum memenuhi seluruh unit tugas atau masih memerlukan pengumpulan bukti tugas ujian praktik. Pastikan Anda menyelesaikan seluruh unit tugas ujian di bawah ini dan menunggu validasi asesor.
+                        Hasil uji kompetensi belum memenuhi seluruh unit tugas atau terdapat tugas yang perlu diperbaiki sesuai catatan asesor penguji. Silakan periksa catatan asesor pada tabel unit tugas di bawah dan kirimkan pembaruan/revisi.
                     </div>
                 </div>
             </div>
         @endif
 
         <!-- Rincian Biodata Asesi Terverifikasi -->
-        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 1rem; font-size: 0.85rem;">
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; font-size: 0.85rem;">
             <div style="background: #f8fafc; padding: 0.85rem 1rem; border-radius: var(--radius-sm); border: 1px solid var(--border-subtle);">
                 <div style="color: var(--text-muted); font-size: 0.75rem; margin-bottom: 0.25rem;">Nama Lengkap Asesi</div>
                 <div style="font-weight: 700; color: var(--text-primary);">{{ $participant->full_name }}</div>
+            </div>
+            <div style="background: #f8fafc; padding: 0.85rem 1rem; border-radius: var(--radius-sm); border: 1px solid var(--border-subtle);">
+                <div style="color: var(--text-muted); font-size: 0.75rem; margin-bottom: 0.25rem;">NIK (KTP)</div>
+                <div style="font-weight: 600; color: var(--text-primary); font-family: var(--font-mono);">{{ $participant->nik ?: 'Belum diisi' }}</div>
+            </div>
+            <div style="background: #f8fafc; padding: 0.85rem 1rem; border-radius: var(--radius-sm); border: 1px solid var(--border-subtle);">
+                <div style="color: var(--text-muted); font-size: 0.75rem; margin-bottom: 0.25rem;">Jenis Kelamin</div>
+                <div style="font-weight: 600; color: var(--text-primary);">{{ $participant->gender ?: 'Belum diisi' }}</div>
             </div>
             <div style="background: #f8fafc; padding: 0.85rem 1rem; border-radius: var(--radius-sm); border: 1px solid var(--border-subtle);">
                 <div style="color: var(--text-muted); font-size: 0.75rem; margin-bottom: 0.25rem;">Email Terdaftar</div>
@@ -163,11 +187,24 @@
                     @endphp
                     <tr>
                         <td>
-                            <span class="badge badge-code" style="color: #4338ca;">{{ $task->task_code ?: 'TSK-'.str_pad($task->id, 2, '0', STR_PAD_LEFT) }}</span>
+                            <span class="badge badge-code" style="color: var(--accent-primary);">{{ $task->task_code ?: 'TSK-'.str_pad($task->id, 2, '0', STR_PAD_LEFT) }}</span>
                         </td>
                         <td>
                             <div style="font-weight: 700; color: var(--text-primary); margin-bottom: 0.25rem;">{{ $task->title }}</div>
                             <div style="font-size: 0.8rem; color: var(--text-muted); line-height: 1.45;">{{ $task->description }}</div>
+                            @if($sub && $sub->file_path)
+                                <div style="margin-top: 0.4rem; font-size: 0.75rem;">
+                                    @if($sub->isImage())
+                                        <a href="{{ $sub->fileUrl() }}" target="_blank" style="display: inline-flex; align-items: center; gap: 0.25rem; color: #166534; font-weight: 600; text-decoration: underline;">
+                                            🖼️ Lihat Gambar Bukti ({{ $sub->file_name ?: 'Lampiran' }})
+                                        </a>
+                                    @else
+                                        <a href="{{ $sub->fileUrl() }}" target="_blank" download style="display: inline-flex; align-items: center; gap: 0.25rem; color: #1e40af; font-weight: 600; text-decoration: underline;">
+                                            📎 Unduh Berkas ({{ $sub->file_name ?: 'Lampiran' }})
+                                        </a>
+                                    @endif
+                                </div>
+                            @endif
                         </td>
                         <td>
                             @if(!$sub)
@@ -217,7 +254,7 @@
 @else
     <!-- Empty State: Belum Terdaftar Pada Skema -->
     <div style="background: #ffffff; border: 1px solid var(--border-subtle); border-radius: var(--radius-md); padding: 3.5rem 2rem; text-align: center; box-shadow: var(--shadow-card);">
-        <div style="width: 54px; height: 54px; border-radius: 50%; background: #eef2ff; color: #4338ca; display: grid; place-items: center; margin: 0 auto 1.25rem;">
+        <div style="width: 54px; height: 54px; border-radius: 50%; background: var(--accent-primary-light); color: var(--accent-primary); border: 1px solid var(--accent-primary-border); display: grid; place-items: center; margin: 0 auto 1.25rem;">
             <svg style="width: 28px; height: 28px;" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v3.75m9-.75a9 9 0 11-18 0 9 9 0 0118 0zm-9 3.75h.008v.008H12v-.008z" />
             </svg>

@@ -42,6 +42,8 @@ Route::prefix('lsp')->name('lsp.')->group(function () {
 
         // ROUTE: Update Master Data & Biodata Akun User / Asesi
         Route::put('/profile', [LspController::class, 'updateProfile'])->name('profile.update');
+        Route::put('/users/{user}', [LspController::class, 'updateUser'])->name('users.update');
+        Route::delete('/users/{user}', [LspController::class, 'destroyUser'])->name('users.destroy');
 
         // ROUTE: Menu Khusus Hasil & Rekomendasi Asesmen (Asesi)
         Route::get('/assessment-result', [LspController::class, 'assessmentResult'])->name('assessment.result');

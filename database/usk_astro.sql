@@ -10,10 +10,17 @@ USE `usk_astro`;
 CREATE TABLE IF NOT EXISTS `users` (
   `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
   `name` varchar(255) NOT NULL,
+  `nik` varchar(16) DEFAULT NULL,
+  `gender` varchar(20) DEFAULT NULL,
+  `education_type` varchar(50) NOT NULL DEFAULT 'Siswa/Pelajar',
+  `academic_title` varchar(50) DEFAULT NULL,
   `email` varchar(255) NOT NULL,
   `role` varchar(50) NOT NULL DEFAULT 'user',
   `phone_number` varchar(20) DEFAULT NULL,
   `address` text DEFAULT NULL,
+  `id_card_file` varchar(255) DEFAULT NULL,
+  `report_sheet_file` varchar(255) DEFAULT NULL,
+  `certificate_file` varchar(255) DEFAULT NULL,
   `email_verified_at` timestamp NULL DEFAULT NULL,
   `password` varchar(255) NOT NULL,
   `remember_token` varchar(100) DEFAULT NULL,
@@ -68,11 +75,18 @@ CREATE TABLE IF NOT EXISTS `participants` (
   `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
   `scheme_id` bigint(20) unsigned NOT NULL,
   `registration_number` varchar(255) NOT NULL,
+  `nik` varchar(16) DEFAULT NULL,
+  `gender` varchar(20) DEFAULT NULL,
+  `education_type` varchar(50) NOT NULL DEFAULT 'Siswa/Pelajar',
+  `academic_title` varchar(50) DEFAULT NULL,
   `full_name` varchar(255) NOT NULL,
   `email` varchar(255) NOT NULL,
   `phone_number` varchar(20) NOT NULL,
   `address` text DEFAULT NULL,
-  `status` varchar(255) NOT NULL DEFAULT 'Belum Kompeten',
+  `id_card_file` varchar(255) DEFAULT NULL,
+  `report_sheet_file` varchar(255) DEFAULT NULL,
+  `certificate_file` varchar(255) DEFAULT NULL,
+  `status` varchar(255) NOT NULL DEFAULT 'Pending',
   `created_at` timestamp NULL DEFAULT NULL,
   `updated_at` timestamp NULL DEFAULT NULL,
   PRIMARY KEY (`id`),
@@ -130,7 +144,12 @@ CREATE TABLE IF NOT EXISTS `task_submissions` (
   `participant_id` bigint(20) unsigned NOT NULL,
   `user_id` bigint(20) unsigned DEFAULT NULL,
   `submission_content` text NOT NULL,
+  `file_path` varchar(255) DEFAULT NULL,
+  `file_name` varchar(255) DEFAULT NULL,
+  `file_type` varchar(50) DEFAULT NULL,
   `status` varchar(50) NOT NULL DEFAULT 'Menunggu Peninjauan',
+  `is_revised` tinyint(1) NOT NULL DEFAULT 0,
+  `revision_count` int(11) NOT NULL DEFAULT 0,
   `admin_notes` text DEFAULT NULL,
   `created_at` timestamp NULL DEFAULT NULL,
   `updated_at` timestamp NULL DEFAULT NULL,
@@ -147,11 +166,14 @@ CREATE TABLE IF NOT EXISTS `task_submissions` (
 -- DML: DATA AWAL (SEEDING)
 -- ============================================================
 
--- Data Admin (admin@gmail.com / Password: 123456)
+-- Data Admin (admin@gmail.com / Password: 123456) & Sample Users
 DELETE FROM `users` WHERE `email` = 'admin@lsp.id';
 INSERT INTO `users` (`id`, `name`, `email`, `role`, `phone_number`, `password`, `created_at`, `updated_at`)
-VALUES (1, 'admin', 'admin@gmail.com', 'admin', '081299990001', '$2y$12$4L6i4x3h3y.kI4Hh1Qv6kOCw9zGk.gM9R4rO7C4p3c7Q9aG8zO7re', NOW(), NOW())
-ON DUPLICATE KEY UPDATE `email` = 'admin@gmail.com', `role` = 'admin';
+VALUES
+(1, 'admin', 'admin@gmail.com', 'admin', '081299990001', '$2y$12$4L6i4x3h3y.kI4Hh1Qv6kOCw9zGk.gM9R4rO7C4p3c7Q9aG8zO7re', NOW(), NOW()),
+(2, 'Budi Santoso', 'budi.santoso@example.com', 'user', '081234567890', '$2y$12$4L6i4x3h3y.kI4Hh1Qv6kOCw9zGk.gM9R4rO7C4p3c7Q9aG8zO7re', NOW(), NOW()),
+(3, 'Dewi Lestari', 'dewi.lestari@example.com', 'user', '081388776655', '$2y$12$4L6i4x3h3y.kI4Hh1Qv6kOCw9zGk.gM9R4rO7C4p3c7Q9aG8zO7re', NOW(), NOW())
+ON DUPLICATE KEY UPDATE `email` = VALUES(`email`), `role` = VALUES(`role`);
 
 -- Data Master Skema Sertifikasi
 INSERT INTO `certification_schemes` (`id`, `scheme_code`, `scheme_name`, `description`, `created_at`, `updated_at`) VALUES
@@ -161,11 +183,12 @@ INSERT INTO `certification_schemes` (`id`, `scheme_code`, `scheme_name`, `descri
 ON DUPLICATE KEY UPDATE `scheme_name` = VALUES(`scheme_name`);
 
 -- Data Peserta Asesmen (Asesi)
-INSERT INTO `participants` (`id`, `scheme_id`, `registration_number`, `full_name`, `email`, `phone_number`, `address`, `status`, `created_at`, `updated_at`) VALUES
-(1, 1, 'REG-2026-001', 'Budi Santoso', 'budi.santoso@example.com', '081234567890', 'Jl. Merdeka No. 10, Jakarta Pusat', 'Kompensasi / Kompeten', NOW(), NOW()),
-(2, 1, 'REG-2026-002', 'Siti Rahmawati', 'siti.rahma@example.com', '082198765432', 'Jl. Diponegoro No. 22, Bandung', 'Belum Kompeten', NOW(), NOW()),
-(3, 2, 'REG-2026-003', 'Ahmad Fauzi', 'ahmad.fauzi@example.com', '085712345678', 'Jl. Gajah Mada No. 45, Surabaya', 'Kompensasi / Kompeten', NOW(), NOW())
-ON DUPLICATE KEY UPDATE `full_name` = VALUES(`full_name`);
+INSERT INTO `participants` (`id`, `scheme_id`, `registration_number`, `nik`, `gender`, `full_name`, `email`, `phone_number`, `address`, `status`, `created_at`, `updated_at`) VALUES
+(1, 1, 'REG-2026-001', '3171012304900001', 'Laki-laki', 'Budi Santoso', 'budi.santoso@example.com', '081234567890', 'Jl. Merdeka No. 10, Jakarta Pusat', 'Kompeten', NOW(), NOW()),
+(2, 1, 'REG-2026-002', '3273014508920002', 'Perempuan', 'Siti Rahmawati', 'siti.rahma@example.com', '082198765432', 'Jl. Diponegoro No. 22, Bandung', 'Belum Kompeten', NOW(), NOW()),
+(3, 2, 'REG-2026-003', '3578011206890003', 'Laki-laki', 'Ahmad Fauzi', 'ahmad.fauzi@example.com', '085712345678', 'Jl. Gajah Mada No. 45, Surabaya', 'Kompeten', NOW(), NOW()),
+(4, 1, 'REG-2026-004', '3271016509950004', 'Perempuan', 'Dewi Lestari', 'dewi.lestari@example.com', '081388776655', 'Jl. Pajajaran No. 88, Bogor', 'Pending', NOW(), NOW())
+ON DUPLICATE KEY UPDATE `full_name` = VALUES(`full_name`), `status` = VALUES(`status`);
 
 -- Data Konfigurasi Cetak Laporan / Berita Acara USK Default
 INSERT INTO `lsp_report_settings` (`id`, `template_name`, `institution_name`, `tuk_name`, `address`, `contact_info`, `document_title`, `document_number`, `tuk_location`, `assessment_date`, `assessment_method`, `closing_statement`, `signer1_role`, `signer1_name`, `signer1_reg_number`, `signer2_city`, `signer2_role`, `signer2_name`, `signer2_reg_number`, `is_active`, `created_at`, `updated_at`) VALUES

@@ -15,11 +15,11 @@
             display: grid;
             place-items: center;
             padding: 2.5rem 1.5rem;
-            background: radial-gradient(circle at 50% 0%, #eef2ff, #f8fafc 60%);
+            background: var(--bg-canvas);
         }
         .register-card {
             width: 100%;
-            max-width: 520px;
+            max-width: 560px;
             background: #ffffff;
             border: 1px solid var(--border-subtle);
             border-radius: var(--radius-md);
@@ -52,7 +52,7 @@
             <!-- Header Brand Registrasi -->
             <div style="text-align: center; margin-bottom: 1.75rem;">
                 <img src="{{ asset('images/logo.png') }}" alt="Logo LSP" style="width: 60px; height: 60px; object-fit: contain; margin: 0 auto 0.75rem; background: transparent;">
-                <h1 style="font-size: 1.35rem; font-weight: 800; color: var(--text-primary); letter-spacing: -0.02em;">REGISTRASI ASESI LSP</h1>
+                <h1 style="font-size: 1.35rem; font-weight: 800; color: var(--text-primary); letter-spacing: -0.02em;">REGISTRASI LSP</h1>
                 <p style="font-size: 0.85rem; color: var(--text-muted); margin-top: 0.25rem;">Daftarkan akun peserta untuk sertifikasi kompetensi</p>
             </div>
 
@@ -92,7 +92,7 @@
             @endif
 
             <!-- Form Pendaftaran -->
-            <form action="{{ route('lsp.register.post') }}" method="POST" id="registerForm">
+            <form action="{{ route('lsp.register.post') }}" method="POST" enctype="multipart/form-data" id="registerForm">
                 @csrf
 
                 <!-- Nama Lengkap (Maks 50, No Numbers, Allows Quotes) -->
@@ -118,6 +118,69 @@
                 </div>
 
                 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.85rem;">
+                    <!-- NIK (Nomor Induk Kependudukan Maks 16 Karakter) -->
+                    <div class="form-group">
+                        <label class="form-label" style="display: flex; justify-content: space-between;">
+                            <span>NIK (KTP) <span style="color: var(--accent-rose);">*</span></span>
+                            <span style="font-size: 0.75rem; color: var(--text-muted); font-weight: 400;">Maks. 16 digit</span>
+                        </label>
+                        <input
+                            type="text"
+                            name="nik"
+                            id="reg_nik"
+                            class="form-control"
+                            maxlength="16"
+                            inputmode="numeric"
+                            placeholder="16 digit NIK sesuai KTP"
+                            value="{{ old('nik') }}"
+                            required
+                        >
+                    </div>
+
+                    <!-- Jenis Kelamin -->
+                    <div class="form-group">
+                        <label class="form-label">
+                            Jenis Kelamin <span style="color: var(--accent-rose);">*</span>
+                        </label>
+                        <select name="gender" id="reg_gender" class="form-select" required>
+                            <option value="">-- Pilih Jenis Kelamin --</option>
+                            <option value="Laki-laki" {{ old('gender') === 'Laki-laki' ? 'selected' : '' }}>Laki-laki</option>
+                            <option value="Perempuan" {{ old('gender') === 'Perempuan' ? 'selected' : '' }}>Perempuan</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Kategori Asesi & Gelar Akademik Khusus Mahasiswa -->
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.85rem;">
+                    <div class="form-group">
+                        <label class="form-label">
+                            Kategori Asesi <span style="color: var(--accent-rose);">*</span>
+                        </label>
+                        <select name="education_type" id="reg_education_type" class="form-select" required onchange="toggleAcademicTitle()">
+                            <option value="Siswa/Pelajar" {{ old('education_type', 'Siswa/Pelajar') === 'Siswa/Pelajar' ? 'selected' : '' }}>Siswa / Pelajar</option>
+                            <option value="Mahasiswa" {{ old('education_type') === 'Mahasiswa' ? 'selected' : '' }}>Mahasiswa</option>
+                            <option value="Umum" {{ old('education_type') === 'Umum' ? 'selected' : '' }}>Umum / Profesional</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group" id="academicTitleGroup" style="display: {{ in_array(old('education_type'), ['Mahasiswa', 'Umum']) ? 'block' : 'none' }};">
+                        <label class="form-label" style="display: flex; justify-content: space-between;">
+                            <span id="academicTitleLabel">{{ old('education_type') === 'Umum' ? 'Gelar Profesi / Akademik' : 'Gelar Mahasiswa' }} (Opsional)</span>
+                            <span id="academicTitleHint" style="font-size: 0.725rem; color: var(--text-muted); font-weight: 500;">Opsional</span>
+                        </label>
+                        <input
+                            type="text"
+                            name="academic_title"
+                            id="reg_academic_title"
+                            class="form-control"
+                            maxlength="50"
+                            placeholder="Contoh: S.Kom, S.T., A.Md., M.Kom"
+                            value="{{ old('academic_title') }}"
+                        >
+                    </div>
+                </div>
+
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.85rem;">
                     <!-- Nomor Handphone (Maks 13) -->
                     <div class="form-group">
                         <label class="form-label" style="display: flex; justify-content: space-between;">
@@ -136,14 +199,20 @@
                         >
                     </div>
 
-                    <!-- Email -->
+                    <!-- Alamat Gmail (@gmail.com) -->
                     <div class="form-group">
-                        <label class="form-label">Email Aktif <span style="color: var(--accent-rose);">*</span></label>
+                        <label class="form-label" style="display: flex; justify-content: space-between;">
+                            <span>Alamat Gmail <span style="color: var(--accent-rose);">*</span></span>
+                            <span style="font-size: 0.75rem; color: var(--accent-primary); font-weight: 600;">@gmail.com</span>
+                        </label>
                         <input
                             type="email"
                             name="email"
+                            id="reg_email"
                             class="form-control"
-                            placeholder="asesi@email.com"
+                            placeholder="namaanda@gmail.com"
+                            pattern="^[a-zA-Z0-9._%+\-]+@gmail\.com$"
+                            title="Format harus menggunakan akun Gmail (@gmail.com)"
                             value="{{ old('email') }}"
                             required
                         >
@@ -167,6 +236,115 @@
                 <div class="form-group">
                     <label class="form-label">Alamat Domisili</label>
                     <textarea name="address" class="form-control" rows="2" placeholder="Kota / Kabupaten domisili saat ini...">{{ old('address') }}</textarea>
+                </div>
+
+                <!-- Persyaratan Berkas Dokumen Asesi (KTP, Rapor, Sertifikat) -->
+                <div style="background: #f8fafc; border: 1px solid var(--border-subtle); padding: 1rem; border-radius: var(--radius-sm); margin-bottom: 1.25rem;">
+                    <div style="font-size: 0.825rem; font-weight: 700; color: var(--text-primary); margin-bottom: 0.25rem; display: flex; align-items: center; gap: 0.4rem;">
+                        <svg style="width: 16px; height: 16px; color: var(--accent-primary);" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" />
+                        </svg>
+                        <span>Dokumen Persyaratan Asesi (Maks. 2MB per berkas)</span>
+                    </div>
+                    <p style="font-size: 0.725rem; color: var(--text-muted); margin-bottom: 0.85rem; line-height: 1.35;">
+                        Unggah berkas untuk kelengkapan portofolio uji kompetensi (opsional saat registrasi awal).
+                    </p>
+
+                    <!-- Foto KTP / Kartu Pelajar -->
+                    <div class="form-group" style="margin-bottom: 0.75rem;">
+                        <label class="form-label" style="font-size: 0.775rem; margin-bottom: 0.25rem; display: flex; justify-content: space-between;">
+                            <span>Foto KTP / Kartu Pelajar</span>
+                            <span style="font-size: 0.7rem; color: var(--text-muted);">Maks. 2MB (JPG/PNG/PDF)</span>
+                        </label>
+                        <input
+                            type="file"
+                            name="id_card_file"
+                            id="reg_id_card"
+                            class="form-control file-input-check"
+                            accept=".jpg,.jpeg,.png,.webp,.pdf"
+                            style="font-size: 0.775rem; padding: 0.35rem 0.5rem;"
+                        >
+                    </div>
+
+                    <!-- Rapor Terakhir -->
+                    <div class="form-group" style="margin-bottom: 0.75rem;">
+                        <label class="form-label" style="font-size: 0.775rem; margin-bottom: 0.25rem; display: flex; justify-content: space-between;">
+                            <span>Rapor Terakhir</span>
+                            <span style="font-size: 0.7rem; color: var(--text-muted);">Maks. 2MB (PDF/DOC/Gambar)</span>
+                        </label>
+                        <input
+                            type="file"
+                            name="report_sheet_file"
+                            id="reg_report_sheet"
+                            class="form-control file-input-check"
+                            accept=".pdf,.doc,.docx,.jpg,.jpeg,.png,.webp"
+                            style="font-size: 0.775rem; padding: 0.35rem 0.5rem;"
+                        >
+                    </div>
+
+                    <!-- Sertifikat Terkait -->
+                    <div class="form-group" style="margin-bottom: 0.75rem;">
+                        <label class="form-label" style="font-size: 0.775rem; margin-bottom: 0.25rem; display: flex; justify-content: space-between;">
+                            <span>Sertifikat Terkait (Pelatihan / Prestasi)</span>
+                            <span style="font-size: 0.7rem; color: var(--text-muted);">Maks. 2MB (PDF/DOC/Gambar)</span>
+                        </label>
+                        <input
+                            type="file"
+                            name="certificate_file"
+                            id="reg_certificate"
+                            class="form-control file-input-check"
+                            accept=".pdf,.doc,.docx,.jpg,.jpeg,.png,.webp"
+                            style="font-size: 0.775rem; padding: 0.35rem 0.5rem;"
+                        >
+                    </div>
+
+                    <!-- Ijazah Terakhir / Surat Keterangan Aktif -->
+                    <div class="form-group" style="margin-bottom: 0.75rem;">
+                        <label class="form-label" style="font-size: 0.775rem; margin-bottom: 0.25rem; display: flex; justify-content: space-between;">
+                            <span>Ijazah Terakhir / Surat Keterangan Aktif</span>
+                            <span style="font-size: 0.7rem; color: var(--text-muted);">Maks. 2MB (PDF/DOC/Gambar)</span>
+                        </label>
+                        <input
+                            type="file"
+                            name="diploma_file"
+                            id="reg_diploma"
+                            class="form-control file-input-check"
+                            accept=".pdf,.doc,.docx,.jpg,.jpeg,.png,.webp"
+                            style="font-size: 0.775rem; padding: 0.35rem 0.5rem;"
+                        >
+                    </div>
+
+                    <!-- Pas Foto Resmi (3x4 / 4x6) -->
+                    <div class="form-group" style="margin-bottom: 0.75rem;">
+                        <label class="form-label" style="font-size: 0.775rem; margin-bottom: 0.25rem; display: flex; justify-content: space-between;">
+                            <span>Pas Foto Formal (3x4 / 4x6)</span>
+                            <span style="font-size: 0.7rem; color: var(--text-muted);">Maks. 2MB (JPG/PNG)</span>
+                        </label>
+                        <input
+                            type="file"
+                            name="photo_file"
+                            id="reg_photo"
+                            class="form-control file-input-check"
+                            accept=".jpg,.jpeg,.png,.webp"
+                            style="font-size: 0.775rem; padding: 0.35rem 0.5rem;"
+                        >
+                    </div>
+
+                    <!-- Portofolio / Berkas Pendukung Tambahan -->
+                    <div class="form-group" style="margin-bottom: 0;">
+                        <label class="form-label" style="font-size: 0.775rem; margin-bottom: 0.25rem; display: flex; justify-content: space-between;">
+                            <span>Portofolio / Dokumen Pendukung Tambahan</span>
+                            <span style="font-size: 0.7rem; color: var(--text-muted);">Maks. 2MB (PDF/DOC/ZIP/Gambar)</span>
+                        </label>
+                        <input
+                            type="file"
+                            name="portfolio_file"
+                            id="reg_portfolio"
+                            class="form-control file-input-check"
+                            accept=".pdf,.doc,.docx,.jpg,.jpeg,.png,.webp,.zip"
+                            style="font-size: 0.775rem; padding: 0.35rem 0.5rem;"
+                        >
+                    </div>
                 </div>
 
                 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.85rem;">
@@ -242,15 +420,72 @@
     <script>
         // Real-time sanitization: cegah input angka pada nama
         const nameInput = document.getElementById('reg_name');
-        nameInput.addEventListener('input', function() {
-            // Hapus karakter angka jika diketik/dipaste
-            this.value = this.value.replace(/[0-9]/g, '');
-        });
+        if (nameInput) {
+            nameInput.addEventListener('input', function() {
+                // Hapus karakter angka jika diketik/dipaste
+                this.value = this.value.replace(/[0-9]/g, '');
+            });
+        }
+
+        // Real-time sanitization: NIK hanya angka & maksimal 16 digit
+        const nikInput = document.getElementById('reg_nik');
+        if (nikInput) {
+            nikInput.addEventListener('input', function() {
+                this.value = this.value.replace(/[^0-9]/g, '').slice(0, 16);
+            });
+        }
 
         // Real-time sanitization: nomor handphone hanya angka
         const phoneInput = document.getElementById('reg_phone');
-        phoneInput.addEventListener('input', function() {
-            this.value = this.value.replace(/[^0-9]/g, '');
+        if (phoneInput) {
+            phoneInput.addEventListener('input', function() {
+                this.value = this.value.replace(/[^0-9]/g, '').slice(0, 13);
+            });
+        }
+
+        // Toggle field gelar akademik/profesi (Mahasiswa / Umum)
+        function toggleAcademicTitle() {
+            const eduSelect = document.getElementById('reg_education_type');
+            const group = document.getElementById('academicTitleGroup');
+            const input = document.getElementById('reg_academic_title');
+            const label = document.getElementById('academicTitleLabel');
+            const hint = document.getElementById('academicTitleHint');
+            if (!eduSelect || !group) return;
+
+            if (eduSelect.value === 'Mahasiswa' || eduSelect.value === 'Umum') {
+                group.style.display = 'block';
+                if (input) input.required = false;
+                if (label) {
+                    label.innerText = (eduSelect.value === 'Umum' ? 'Gelar Profesi / Akademik' : 'Gelar Mahasiswa') + ' (Opsional)';
+                }
+                if (hint) {
+                    hint.innerText = 'Opsional';
+                }
+            } else {
+                group.style.display = 'none';
+                if (input) {
+                    input.required = false;
+                    input.value = '';
+                }
+            }
+        }
+
+        // Validasi ukuran berkas pendaftaran (maksimal 2MB / 2048 KB)
+        document.querySelectorAll('.file-input-check').forEach(function(input) {
+            input.addEventListener('change', function() {
+                if (this.files && this.files[0]) {
+                    const maxBytes = 2 * 1024 * 1024; // 2MB
+                    if (this.files[0].size > maxBytes) {
+                        alert('Ukuran berkas melebihi batas maksimal 2MB (2048 KB). File Anda berukuran: ' + (this.files[0].size / 1024 / 1024).toFixed(2) + ' MB. Silakan pilih berkas yang lebih kecil.');
+                        this.value = '';
+                    }
+                }
+            });
+        });
+
+        // Jalankan sinkronisasi tampilan gelar saat halaman dimuat
+        document.addEventListener('DOMContentLoaded', function() {
+            toggleAcademicTitle();
         });
 
         function togglePassword(inputId, btn) {

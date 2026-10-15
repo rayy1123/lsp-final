@@ -38,7 +38,7 @@ return new class extends Migration
             $table->string('email');
             $table->string('phone_number');
             $table->text('address')->nullable();
-            $table->string('status')->default('Belum Kompeten');
+            $table->string('status')->default('Pending');
             $table->timestamps();
         });
 

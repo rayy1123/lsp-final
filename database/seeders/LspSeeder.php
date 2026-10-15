@@ -45,9 +45,23 @@ class LspSeeder extends Seeder
             ['email' => 'budi.santoso@example.com'],
             [
                 'name' => 'Budi Santoso',
+                'nik' => '3171012304900001',
+                'gender' => 'Laki-laki',
                 'password' => Hash::make('user123'),
                 'role' => 'user',
                 'phone_number' => '081234567890',
+            ]
+        );
+
+        User::updateOrCreate(
+            ['email' => 'dewi.lestari@example.com'],
+            [
+                'name' => 'Dewi Lestari',
+                'nik' => '3271016509950004',
+                'gender' => 'Perempuan',
+                'password' => Hash::make('user123'),
+                'role' => 'user',
+                'phone_number' => '081388776655',
             ]
         );
 
@@ -81,11 +95,13 @@ class LspSeeder extends Seeder
             ['registration_number' => 'REG-2026-001'],
             [
                 'scheme_id' => $s1->id,
+                'nik' => '3171012304900001',
+                'gender' => 'Laki-laki',
                 'full_name' => 'Budi Santoso',
                 'email' => 'budi.santoso@example.com',
                 'phone_number' => '081234567890',
                 'address' => 'Jl. Merdeka No. 10, Jakarta Pusat',
-                'status' => 'Kompensasi / Kompeten',
+                'status' => 'Kompeten',
             ]
         );
 
@@ -93,6 +109,8 @@ class LspSeeder extends Seeder
             ['registration_number' => 'REG-2026-002'],
             [
                 'scheme_id' => $s1->id,
+                'nik' => '3273014508920002',
+                'gender' => 'Perempuan',
                 'full_name' => 'Siti Rahmawati',
                 'email' => 'siti.rahma@example.com',
                 'phone_number' => '082198765432',
@@ -105,11 +123,27 @@ class LspSeeder extends Seeder
             ['registration_number' => 'REG-2026-003'],
             [
                 'scheme_id' => $s2->id,
+                'nik' => '3578011206890003',
+                'gender' => 'Laki-laki',
                 'full_name' => 'Ahmad Fauzi',
                 'email' => 'ahmad.fauzi@example.com',
                 'phone_number' => '085712345678',
                 'address' => 'Jl. Gajah Mada No. 45, Surabaya',
-                'status' => 'Kompensasi / Kompeten',
+                'status' => 'Kompeten',
+            ]
+        );
+
+        Participant::firstOrCreate(
+            ['registration_number' => 'REG-2026-004'],
+            [
+                'scheme_id' => $s1->id,
+                'nik' => '3271016509950004',
+                'gender' => 'Perempuan',
+                'full_name' => 'Dewi Lestari',
+                'email' => 'dewi.lestari@example.com',
+                'phone_number' => '081388776655',
+                'address' => 'Jl. Pajajaran No. 88, Bogor',
+                'status' => 'Pending',
             ]
         );
 

@@ -21,22 +21,22 @@
 
 @if(!Auth::user()->isAdmin() && $currentScheme)
     <!-- Banner Informasi Skema Aktif yang Sedang Dikerjakan Asesi -->
-    <div style="background: #ffffff; border: 1px solid #c7d2fe; border-left: 4px solid #4f46e5; border-radius: var(--radius-md); padding: 1.5rem; margin-bottom: 2rem; box-shadow: var(--shadow-card);">
+    <div style="background: var(--bg-surface); border: 1px solid var(--accent-primary-border); border-left: 4px solid var(--accent-primary); border-radius: var(--radius-md); padding: 1.5rem; margin-bottom: 2rem; box-shadow: var(--shadow-card);">
         <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 1rem;">
             <div>
-                <div style="display: inline-flex; align-items: center; gap: 0.4rem; background: #eef2ff; color: #4338ca; padding: 0.25rem 0.65rem; border-radius: 9999px; font-size: 0.75rem; font-weight: 700; margin-bottom: 0.5rem;">
-                    <span style="width: 6px; height: 6px; border-radius: 50%; background: #4f46e5;"></span>
+                <div style="display: inline-flex; align-items: center; gap: 0.4rem; background: var(--accent-primary-light); color: var(--accent-primary); padding: 0.25rem 0.65rem; border-radius: 9999px; font-size: 0.75rem; font-weight: 700; margin-bottom: 0.5rem; border: 1px solid var(--accent-primary-border);">
+                    <span style="width: 6px; height: 6px; border-radius: 50%; background: var(--accent-primary);"></span>
                     SKEMA AKTIF YANG SEDANG DIKERJAKAN
                 </div>
                 <h3 style="font-size: 1.25rem; font-weight: 800; color: var(--text-primary); margin-bottom: 0.25rem;">
                     {{ $currentScheme->scheme_name }}
                 </h3>
                 <div style="font-size: 0.8rem; color: var(--text-muted); display: flex; align-items: center; gap: 0.75rem; flex-wrap: wrap; margin-bottom: 0.75rem;">
-                    <span>Kode Skema: <b style="font-family: var(--font-mono); color: #4338ca;">{{ $currentScheme->scheme_code }}</b></span>
+                    <span>Kode Skema: <b style="font-family: var(--font-mono); color: var(--accent-primary);">{{ $currentScheme->scheme_code }}</b></span>
                     <span>&bull;</span>
                     <span>No. Registrasi: <b style="font-family: var(--font-mono); color: var(--text-primary);">{{ $myParticipant->registration_number ?? '-' }}</b></span>
                     <span>&bull;</span>
-                    <span>Status: <b style="color: {{ str_contains($myParticipant->status, 'Kompeten') && !str_contains($myParticipant->status, 'Belum') ? 'var(--accent-emerald)' : '#b45309' }};">{{ $myParticipant->status }}</b></span>
+                    <span>Status: <b style="color: {{ str_contains($myParticipant->status, 'Kompeten') && !str_contains($myParticipant->status, 'Belum') ? 'var(--accent-emerald)' : (str_contains($myParticipant->status, 'Pending') ? 'var(--accent-sky)' : '#b45309') }};">{{ $myParticipant->status }}</b></span>
                 </div>
                 <p style="font-size: 0.85rem; color: var(--text-secondary); line-height: 1.5; max-width: 680px; margin: 0;">
                     {{ $currentScheme->description ?: 'Standar kompetensi kerja nasional resmi.' }}
@@ -69,7 +69,7 @@
     </div>
 @endif
 
-<!-- Bar Pencarian & Validasi Relasi Data -->
+<!-- Bar Pencarian -->
 <div style="margin-bottom: 1.5rem; display: flex; justify-content: space-between; align-items: center; gap: 1rem; flex-wrap: wrap;">
     <form method="GET" action="{{ route('lsp.schemes') }}" style="display: flex; gap: 0.5rem; width: 100%; max-width: 520px;">
         <div style="position: relative; flex: 1;">
@@ -84,7 +84,7 @@
         @endif
     </form>
     <div style="font-size: 0.8rem; color: var(--text-muted); display: flex; align-items: center; gap: 0.5rem;">
-        <span style="display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: #4f46e5;"></span>
+        <span style="display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: var(--accent-primary);"></span>
         <span>{{ (!Auth::user()->isAdmin() && $currentScheme) ? 'Tersedia: ' : 'Ditemukan: ' }}<b>{{ count($schemes) }}</b> {{ (!Auth::user()->isAdmin() && $currentScheme) ? 'Skema Lainnya' : 'Skema Sertifikasi' }}</span>
     </div>
 </div>
@@ -98,7 +98,7 @@
                 <th style="width: 250px;">Nama Skema Sertifikasi</th>
                 <th>Deskripsi Standar</th>
                 @if(Auth::user()->isAdmin())
-                    <th style="width: 150px; text-align: center;">Relasi Peserta (1:N)</th>
+                    <th style="width: 150px; text-align: center;">Jumlah Peserta</th>
                 @endif
                 <th style="width: 150px; text-align: right;">{{ Auth::user()->isAdmin() ? 'Aksi Admin' : 'Status / Aksi' }}</th>
             </tr>
@@ -107,24 +107,22 @@
             @forelse($schemes as $scheme)
                 <tr>
                     <td>
-                        <span class="badge badge-code" style="font-weight: 700; color: #4338ca;">{{ $scheme->scheme_code }}</span>
+                        <span class="badge badge-code" style="font-weight: 700; color: var(--accent-primary);">{{ $scheme->scheme_code }}</span>
                     </td>
                     <td>
                         <div style="font-weight: 700; color: var(--text-primary);">{{ $scheme->scheme_name }}</div>
-                        <div style="font-size: 0.75rem; color: var(--text-dim); font-family: var(--font-mono);">PK ID: #{{ $scheme->id }}</div>
                     </td>
                     <td style="color: var(--text-secondary); font-size: 0.85rem; line-height: 1.4;">
                         {{ $scheme->description ?: '-' }}
                     </td>
                     @if(Auth::user()->isAdmin())
                         <td style="text-align: center;">
-                            <!-- Tombol Validasi Hubungan Relasi Data (One-to-Many) -->
-                            <button type="button" class="btn btn-secondary" style="padding: 0.35rem 0.75rem; font-size: 0.775rem; border-radius: 9999px; gap: 0.4rem; background: #f8fafc;" onclick='openRelationModal(@json($scheme))' title="Klik untuk validasi data relasi asesi">
-                                <svg style="width: 14px; height: 14px; color: #4f46e5;" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.19 8.688a4.5 4.5 0 011.242 7.244l-4.5 4.5a4.5 4.5 0 01-6.364-6.364l1.757-1.757m13.35-.622l1.757-1.757a4.5 4.5 0 00-6.364-6.364l-4.5 4.5a4.5 4.5 0 001.242 7.244" />
+                            <span class="badge" style="background: #f1f5f9; color: var(--text-primary); border: 1px solid var(--border-subtle); font-size: 0.8rem; padding: 0.35rem 0.75rem; border-radius: 9999px; display: inline-flex; align-items: center; gap: 0.4rem;" title="{{ $scheme->participants_count ?? 0 }} asesi terdaftar pada skema ini">
+                                <svg style="width: 14px; height: 14px; color: var(--accent-primary);" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
                                 </svg>
                                 <span><b>{{ $scheme->participants_count ?? 0 }}</b> Asesi</span>
-                            </button>
+                            </span>
                         </td>
                     @endif
                     <td style="text-align: right;">
@@ -199,68 +197,6 @@
     </div>
 </div>
 
-<!-- ========================================================================= -->
-<!-- MODAL: VALIDASI HUBUNGAN RELASI DATA (ONE-TO-MANY - ADMIN ONLY)           -->
-<!-- ========================================================================= -->
-<div class="modal-overlay" id="relationModal">
-    <div class="modal-box" style="max-width: 680px;">
-        <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 1.25rem;">
-            <div>
-                <h3 class="modal-title" style="margin-bottom: 0.25rem;">
-                    <svg style="width: 20px; height: 20px; color: #4f46e5;" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.19 8.688a4.5 4.5 0 011.242 7.244l-4.5 4.5a4.5 4.5 0 01-6.364-6.364l1.757-1.757m13.35-.622l1.757-1.757a4.5 4.5 0 00-6.364-6.364l-4.5 4.5a4.5 4.5 0 001.242 7.244" />
-                    </svg>
-                    Validasi Hubungan Relasi Data (One-to-Many)
-                </h3>
-                <p style="font-size: 0.8rem; color: var(--text-muted);">
-                    Integritas relasi antara <code>certification_schemes</code> dan <code>participants</code>.
-                </p>
-            </div>
-            <button type="button" onclick="closeRelationModal()" style="background: none; border: none; font-size: 1.25rem; color: var(--text-muted); cursor: pointer;">&times;</button>
-        </div>
-
-        <!-- Box Visualisasi Arsitektur Relasi Database -->
-        <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 1rem 1.25rem; margin-bottom: 1.25rem; font-size: 0.825rem;">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
-                <span style="font-weight: 700; color: #0f172a;" id="relSchemeTitle">Skema</span>
-                <span class="badge badge-code" id="relSchemeCode">KODE</span>
-            </div>
-            <div style="font-family: var(--font-mono); font-size: 0.775rem; color: #4338ca; background: #eef2ff; padding: 0.4rem 0.6rem; border-radius: 4px; border: 1px solid #c7d2fe;">
-                certification_schemes (PK: id = <span id="relSchemeId">1</span>) ───[ 1 : N ]───&gt; participants (FK: scheme_id = <span id="relFkId">1</span>)
-            </div>
-        </div>
-
-        <!-- Tabel Daftar Asesi yang Terikat -->
-        <div style="max-height: 280px; overflow-y: auto; border: 1px solid var(--border-subtle); border-radius: 8px; margin-bottom: 1.25rem;">
-            <table class="astro-table" style="font-size: 0.825rem;">
-                <thead>
-                    <tr>
-                        <th style="padding: 0.65rem 0.85rem;">No. Reg</th>
-                        <th style="padding: 0.65rem 0.85rem;">Nama Asesi</th>
-                        <th style="padding: 0.65rem 0.85rem;">Kontak</th>
-                        <th style="padding: 0.65rem 0.85rem; text-align: center;">Status</th>
-                    </tr>
-                </thead>
-                <tbody id="relParticipantsBody">
-                    <!-- Dynamic Rows Rendered by JS -->
-                </tbody>
-            </table>
-        </div>
-
-        <div style="display: flex; justify-content: space-between; align-items: center;">
-            <div style="font-size: 0.8rem; color: var(--text-muted);" id="relSummaryText">
-                Terverifikasi terikat presisi.
-            </div>
-            <div style="display: flex; gap: 0.5rem;">
-                <button type="button" class="btn btn-secondary" onclick="closeRelationModal()">Tutup</button>
-                <a href="{{ route('lsp.participants') }}" class="btn btn-primary" style="font-size: 0.8rem; padding: 0.45rem 0.85rem;">
-                    Kelola di Data Peserta &rarr;
-                </a>
-            </div>
-        </div>
-    </div>
-</div>
-
 @push('scripts')
 <script>
     // ==========================================
@@ -297,64 +233,6 @@
 
     modal.addEventListener('click', (e) => {
         if (e.target === modal) closeModal();
-    });
-
-    // ==========================================
-    // MODAL VALIDASI RELASI DATA (ONE-TO-MANY)
-    // ==========================================
-    const relModal = document.getElementById('relationModal');
-    const relSchemeTitle = document.getElementById('relSchemeTitle');
-    const relSchemeCode = document.getElementById('relSchemeCode');
-    const relSchemeId = document.getElementById('relSchemeId');
-    const relFkId = document.getElementById('relFkId');
-    const relParticipantsBody = document.getElementById('relParticipantsBody');
-    const relSummaryText = document.getElementById('relSummaryText');
-
-    function openRelationModal(scheme) {
-        relSchemeTitle.innerText = scheme.scheme_name;
-        relSchemeCode.innerText = scheme.scheme_code;
-        relSchemeId.innerText = scheme.id;
-        relFkId.innerText = scheme.id;
-
-        const participants = scheme.participants || [];
-        relParticipantsBody.innerHTML = '';
-
-        if (participants.length === 0) {
-            relParticipantsBody.innerHTML = `
-                <tr>
-                    <td colspan="4" style="text-align: center; color: var(--text-muted); padding: 2rem;">
-                        Belum ada peserta yang terikat pada skema ini (0 records).<br>
-                        <span style="font-size: 0.75rem; color: var(--text-dim);">Foreign Key (scheme_id = ${scheme.id}) siap menerima pendaftaran data peserta baru.</span>
-                    </td>
-                </tr>
-            `;
-            relSummaryText.innerHTML = `Total: <b>0</b> Asesi terikat`;
-        } else {
-            participants.forEach(p => {
-                const isKompeten = p.status.includes('Kompeten') && !p.status.includes('Belum');
-                const badgeClass = isKompeten ? 'badge-kompeten' : 'badge-belum';
-
-                const tr = document.createElement('tr');
-                tr.innerHTML = `
-                    <td><span class="badge badge-code">${p.registration_number}</span></td>
-                    <td style="font-weight: 700; color: var(--text-primary);">${p.full_name}</td>
-                    <td style="font-size: 0.775rem;">${p.email}<br><span style="color: var(--text-muted); font-family: var(--font-mono);">${p.phone_number}</span></td>
-                    <td style="text-align: center;"><span class="badge ${badgeClass}">${p.status}</span></td>
-                `;
-                relParticipantsBody.appendChild(tr);
-            });
-            relSummaryText.innerHTML = `Validasi Sukses: <b>${participants.length}</b> Data Asesi terikat presisi ke skema ini.`;
-        }
-
-        relModal.classList.add('active');
-    }
-
-    function closeRelationModal() {
-        relModal.classList.remove('active');
-    }
-
-    relModal.addEventListener('click', (e) => {
-        if (e.target === relModal) closeRelationModal();
     });
 </script>
 @endpush

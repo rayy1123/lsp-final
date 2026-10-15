@@ -15,7 +15,7 @@
             display: grid;
             place-items: center;
             padding: 1.5rem;
-            background: radial-gradient(circle at 50% 0%, #eef2ff, #f8fafc 60%);
+            background: var(--bg-canvas);
         }
         .login-card {
             width: 100%;
@@ -82,7 +82,7 @@
                         <a href="{{ route('lsp.dashboard') }}" class="btn btn-primary" style="flex: 1; text-align: center; font-size: 0.8rem; padding: 0.4rem;">
                             Buka Dashboard &rarr;
                         </a>
-                        <a href="{{ route('logout') }}" class="btn btn-secondary" style="font-size: 0.8rem; padding: 0.4rem 0.75rem; color: var(--accent-rose);" title="Keluar dari sesi akun ini">
+                        <a href="{{ route('logout') }}" onclick="return confirm('Konfirmasi Keluar: Apakah Anda yakin ingin keluar dari sesi akun ini?')" class="btn btn-secondary" style="font-size: 0.8rem; padding: 0.4rem 0.75rem; color: var(--accent-rose);" title="Keluar dari sesi akun ini">
                             Ganti Akun
                         </a>
                     </div>
@@ -96,7 +96,7 @@
             @endif
 
             <!-- Form Autentikasi -->
-            <form action="{{ route('lsp.login.post') }}" method="POST">
+            <form action="{{ route('lsp.login.post') }}" method="POST" onsubmit="return confirm('Konfirmasi Masuk: Lanjutkan proses login ke portal sertifikasi LSP?')">
                 @csrf
                 <div class="form-group">
                     <label class="form-label" for="login_email">Username atau Email</label>

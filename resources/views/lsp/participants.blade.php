@@ -9,12 +9,6 @@
         <h2 class="page-title">Peserta Sertifikasi</h2>
         <p class="page-desc">Kelola administrasi data asesi dan status rekomendasi hasil uji.</p>
     </div>
-    <button class="btn btn-primary" onclick="openCreateModal()">
-        <svg style="width: 16px; height: 16px;" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18 7.5v3m0 0v3m0-3h3m-3 0h-3m-2.25-4.125a3.375 3.375 0 11-6.75 0 3.375 3.375 0 016.75 0zM3 19.235v-.11a6.375 6.375 0 0112.75 0v.109A12.318 12.318 0 019.374 21c-2.331 0-4.512-.645-6.374-1.766z" />
-        </svg>
-        Daftarkan Peserta
-    </button>
 </div>
 
 <!-- Bar Pencarian & Filter Efisien -->
@@ -53,16 +47,25 @@
             @forelse($participants as $p)
                 <tr>
                     <td>
-                        <span class="badge badge-code" style="font-weight: 700; color: #4338ca;">{{ $p->registration_number }}</span>
+                        <span class="badge badge-code" style="font-weight: 700; color: var(--accent-primary);">{{ $p->registration_number }}</span>
                     </td>
                     <td>
                         <div style="display: flex; align-items: center; gap: 0.75rem;">
-                            <div style="width: 34px; height: 34px; border-radius: 50%; background: #e0e7ff; color: #4338ca; display: grid; place-items: center; font-size: 0.85rem; font-weight: 700; flex-shrink: 0;">
+                            <div style="width: 34px; height: 34px; border-radius: 50%; background: var(--bg-surface-elevated); color: var(--text-primary); border: 1px solid var(--border-strong); display: grid; place-items: center; font-size: 0.85rem; font-weight: 700; flex-shrink: 0; font-family: var(--font-mono);">
                                 {{ strtoupper(substr($p->full_name, 0, 1)) }}
                             </div>
                             <div>
-                                <div style="font-weight: 700; color: var(--text-primary);">{{ $p->full_name }}</div>
-                                <div style="font-size: 0.75rem; color: var(--text-muted);">{{ Str::limit($p->address ?: 'Alamat belum diisi', 40) }}</div>
+                                <div style="font-weight: 700; color: var(--text-primary); display: flex; align-items: center; gap: 0.4rem; flex-wrap: wrap;">
+                                    <span>{{ $p->full_name }}</span>
+                                    @if($p->gender)
+                                        <span class="badge" style="font-size: 0.65rem; padding: 0.1rem 0.35rem; background: var(--bg-surface-elevated); color: var(--text-muted); border: 1px solid var(--border-subtle);">
+                                            {{ $p->gender }}
+                                        </span>
+                                    @endif
+                                </div>
+                                <div style="font-size: 0.75rem; color: var(--text-muted); font-family: var(--font-mono);">
+                                    @if($p->nik) NIK: {{ $p->nik }} &bull; @endif {{ Str::limit($p->address ?: 'Alamat belum diisi', 35) }}
+                                </div>
                             </div>
                         </div>
                     </td>
@@ -77,7 +80,7 @@
                     </td>
                     <td>
                         <div style="margin-bottom: 0.35rem;">
-                            <span class="badge {{ str_contains($p->status, 'Kompeten') && !str_contains($p->status, 'Belum') ? 'badge-kompeten' : 'badge-belum' }}">
+                            <span class="badge {{ str_contains($p->status, 'Kompeten') && !str_contains($p->status, 'Belum') ? 'badge-kompeten' : (str_contains($p->status, 'Pending') ? 'badge-pending' : 'badge-belum') }}">
                                 <span style="width: 6px; height: 6px; border-radius: 50%; background: currentColor;"></span>
                                 {{ $p->status }}
                             </span>
@@ -120,7 +123,7 @@
                     <td colspan="6" style="text-align: center; color: var(--text-muted); padding: 3rem 1.5rem;">
                         <div style="font-size: 1.75rem; margin-bottom: 0.5rem; opacity: 0.5;">👥</div>
                         <div style="font-weight: 600;">Tidak ada data peserta yang ditemukan</div>
-                        <div style="font-size: 0.8rem; margin-top: 0.25rem;">Coba ubah kata kunci pencarian atau daftarkan peserta baru.</div>
+                        <div style="font-size: 0.8rem; margin-top: 0.25rem;">Coba ubah kata kunci pencarian atau tunggu asesi mendaftar melalui portal.</div>
                     </td>
                 </tr>
             @endforelse
@@ -149,13 +152,15 @@
                     <label class="form-label" style="margin-bottom: 0; font-weight: 700; color: #1e293b;">
                         Pilih Akun User Terdaftar (Panggil Data Otomatis)
                     </label>
-                    <span class="badge" style="background: #e0e7ff; color: #4338ca; font-size: 0.675rem;">Syarat Wajib</span>
+                    <span class="badge" style="background: var(--accent-primary-light); color: var(--accent-primary); border: 1px solid var(--accent-primary-border); font-size: 0.675rem;">Syarat Wajib</span>
                 </div>
                 <select id="user_select" class="form-select" onchange="autoFillFromUser(this)">
                     <option value="">-- Pilih Akun User untuk Isi Otomatis --</option>
                     @foreach($registeredUsers as $ru)
                         <option value="{{ $ru->id }}"
                                 data-name="{{ $ru->name }}"
+                                data-nik="{{ $ru->nik }}"
+                                data-gender="{{ $ru->gender }}"
                                 data-email="{{ $ru->email }}"
                                 data-phone="{{ $ru->phone_number }}"
                                 data-address="{{ $ru->address }}">
@@ -164,7 +169,7 @@
                     @endforeach
                 </select>
                 <div style="font-size: 0.75rem; color: #64748b; margin-top: 0.35rem; line-height: 1.4;">
-                    Syarat pendaftaran skema: Asesi wajib memiliki akun user terdaftar. Memilih akun akan mengisi otomatis Nama, Email, Nomor HP, dan Domisili.
+                    Syarat pendaftaran skema: Asesi wajib memiliki akun user terdaftar. Memilih akun akan mengisi otomatis Nama, NIK, Jenis Kelamin, Email, Nomor HP, dan Domisili.
                 </div>
             </div>
 
@@ -180,7 +185,7 @@
                 </div>
 
                 <div class="form-group">
-                    <label class="form-label">No. Registrasi / NIK</label>
+                    <label class="form-label">No. Registrasi</label>
                     <input type="text" name="registration_number" id="registration_number" class="form-control" placeholder="MISAL: REG-2026-001" required>
                 </div>
             </div>
@@ -188,6 +193,25 @@
             <div class="form-group">
                 <label class="form-label">Nama Lengkap Asesi</label>
                 <input type="text" name="full_name" id="full_name" class="form-control" placeholder="Nama lengkap peserta..." required>
+            </div>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                <div class="form-group">
+                    <label class="form-label" style="display: flex; justify-content: space-between;">
+                        <span>NIK (KTP)</span>
+                        <span style="font-size: 0.725rem; color: var(--text-muted);">Maks. 16 digit</span>
+                    </label>
+                    <input type="text" name="nik" id="nik" class="form-control" maxlength="16" placeholder="16 digit NIK...">
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Jenis Kelamin</label>
+                    <select name="gender" id="gender" class="form-select">
+                        <option value="">-- Pilih Jenis Kelamin --</option>
+                        <option value="Laki-laki">Laki-laki</option>
+                        <option value="Perempuan">Perempuan</option>
+                    </select>
+                </div>
             </div>
 
             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
@@ -217,8 +241,9 @@
             <div class="form-group">
                 <label class="form-label">Status Hasil Asesmen</label>
                 <select name="status" id="status" class="form-select" required>
-                    <option value="Belum Kompeten" id="optBelum">Belum Kompeten</option>
-                    <option value="Kompensasi / Kompeten" id="optKompeten">Kompensasi / Kompeten</option>
+                    <option value="Pending" id="optPending">Pending (Menunggu Penilaian Asesor)</option>
+                    <option value="Belum Kompeten" id="optBelum">Belum Kompeten (BK)</option>
+                    <option value="Kompeten" id="optKompeten">Kompeten (K)</option>
                 </select>
             </div>
 
@@ -249,11 +274,15 @@
         if (!opt || !opt.value) return;
 
         const name = opt.getAttribute('data-name');
+        const nik = opt.getAttribute('data-nik');
+        const gender = opt.getAttribute('data-gender');
         const email = opt.getAttribute('data-email');
         const phone = opt.getAttribute('data-phone');
         const address = opt.getAttribute('data-address');
 
         if (name) document.getElementById('full_name').value = name;
+        if (nik) document.getElementById('nik').value = nik;
+        if (gender) document.getElementById('gender').value = gender;
         if (email) document.getElementById('email').value = email;
         if (phone) document.getElementById('phone_number').value = phone;
         if (address) document.getElementById('address').value = address;
@@ -268,9 +297,11 @@
         document.getElementById('scheme_id').value = '';
         document.getElementById('registration_number').value = '{{ $nextRegNumber ?? "" }}';
         document.getElementById('full_name').value = '';
+        document.getElementById('nik').value = '';
+        document.getElementById('gender').value = '';
         document.getElementById('email').value = '';
         document.getElementById('phone_number').value = '';
-        document.getElementById('status').value = 'Belum Kompeten';
+        document.getElementById('status').value = 'Pending';
         document.getElementById('address').value = '';
 
         const taskMetricContainer = document.getElementById('taskMetricContainer');
@@ -279,7 +310,7 @@
         const optKompeten = document.getElementById('optKompeten');
         if (optKompeten) {
             optKompeten.disabled = true;
-            optKompeten.text = 'Kompensasi / Kompeten (Terkunci: Asesi Baru)';
+            optKompeten.text = 'Kompeten (Terkunci: Asesi Baru)';
         }
 
         modal.classList.add('active');
@@ -293,6 +324,8 @@
         document.getElementById('scheme_id').value = p.scheme_id;
         document.getElementById('registration_number').value = p.registration_number;
         document.getElementById('full_name').value = p.full_name;
+        document.getElementById('nik').value = p.nik || '';
+        document.getElementById('gender').value = p.gender || '';
         document.getElementById('email').value = p.email;
         document.getElementById('phone_number').value = p.phone_number;
         document.getElementById('address').value = p.address || '';
@@ -327,7 +360,7 @@
             }
             if (optKompeten) {
                 optKompeten.disabled = false;
-                optKompeten.text = 'Kompensasi / Kompeten';
+                optKompeten.text = 'Kompeten';
             }
             statusSelect.value = p.status;
         } else if (eligible) {
@@ -344,7 +377,7 @@
             }
             if (optKompeten) {
                 optKompeten.disabled = false;
-                optKompeten.text = 'Kompensasi / Kompeten (Terbuka)';
+                optKompeten.text = 'Kompeten (Terbuka)';
             }
             statusSelect.value = p.status;
         } else {
@@ -361,10 +394,10 @@
             }
             if (optKompeten) {
                 optKompeten.disabled = true;
-                optKompeten.text = 'Kompensasi / Kompeten (Terkunci: Tugas Belum Lengkap)';
+                optKompeten.text = 'Kompeten (Terkunci: Tugas Belum Lengkap)';
             }
-            // Karena belum memenuhi syarat, paksa status ke Belum Kompeten
-            statusSelect.value = 'Belum Kompeten';
+            // Karena belum memenuhi syarat kompeten, jika status sebelumnya Kompeten ubah ke Pending; selain itu pertahankan status saat ini (Pending atau Belum Kompeten)
+            statusSelect.value = (p.status === 'Kompeten') ? 'Pending' : p.status;
         }
 
         modal.classList.add('active');

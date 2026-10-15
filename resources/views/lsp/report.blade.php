@@ -10,7 +10,7 @@
             <div>
                 <h2 style="font-size: 1.35rem; font-weight: 800; color: var(--text-primary); display: flex; align-items: center; gap: 0.5rem;">
                     <span>Laporan Program Uji Sertifikasi Kompetensi (USK)</span>
-                    <span class="badge badge-code" style="color: #4338ca; font-size: 0.75rem;">Template: {{ $reportSetting->template_name }}</span>
+                    <span class="badge badge-code" style="color: var(--accent-primary); font-size: 0.75rem;">Template: {{ $reportSetting->template_name }}</span>
                 </h2>
                 <p style="font-size: 0.825rem; color: var(--text-muted); margin-top: 0.2rem;">
                     Format cetak resmi dokumen berita acara dan rekapitulasi asesmen. Isi kop, nomor surat, tanggal, TUK, dan asesor dapat diubah via CRUD.
@@ -19,7 +19,7 @@
 
             <div style="display: flex; gap: 0.65rem; align-items: center; flex-wrap: wrap;">
                 <!-- Tombol Edit Template Laporan Aktif (CRUD: UPDATE) -->
-                <button type="button" class="btn btn-secondary" onclick="openEditSettingModal()" style="border-color: #818cf8; color: #4338ca; background: #eef2ff;">
+                <button type="button" class="btn btn-secondary" onclick="openEditSettingModal()" style="border-color: var(--accent-primary-border); color: var(--accent-primary); background: var(--accent-primary-light);">
                     <svg style="width: 15px; height: 15px;" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0115.75 21H5.25A2.25 2.25 0 013 18.75V8.25A2.25 2.25 0 015.25 6H10" />
                     </svg>
@@ -143,7 +143,7 @@
 
     <!-- 1. RINGKASAN EKSEKUTIF / STATISTIK CAPAIAN -->
     <div style="margin-bottom: 1.75rem;">
-        <h4 style="font-size: 0.925rem; font-weight: 700; color: #0f172a; margin-bottom: 0.75rem; text-transform: uppercase; border-left: 3px solid #4f46e5; padding-left: 0.5rem;">
+        <h4 style="font-size: 0.925rem; font-weight: 700; color: #0f172a; margin-bottom: 0.75rem; text-transform: uppercase; border-left: 3px solid var(--accent-primary); padding-left: 0.5rem;">
             I. Rekapitulasi Capaian Kelulusan Asesi
         </h4>
 
@@ -166,10 +166,10 @@
                 <div style="font-size: 0.7rem; color: #d97706;">Perlu Tindak Lanjut / Remidi</div>
             </div>
 
-            <div style="border: 1px solid #c7d2fe; border-radius: 6px; padding: 0.85rem; text-align: center; background: #eef2ff;">
-                <div style="font-size: 0.75rem; font-weight: 600; color: #4338ca; text-transform: uppercase;">Tingkat Kelulusan</div>
-                <div style="font-size: 1.65rem; font-weight: 800; font-family: var(--font-mono); color: #4338ca; margin-top: 0.25rem;">{{ $passRate }}%</div>
-                <div style="font-size: 0.7rem; color: #4f46e5;">Persentase Kompeten</div>
+            <div style="border: 1px solid var(--accent-primary-border); border-radius: 6px; padding: 0.85rem; text-align: center; background: var(--accent-primary-light);">
+                <div style="font-size: 0.75rem; font-weight: 600; color: var(--accent-primary); text-transform: uppercase;">Tingkat Kelulusan</div>
+                <div style="font-size: 1.65rem; font-weight: 800; font-family: var(--font-mono); color: var(--accent-primary); margin-top: 0.25rem;">{{ $passRate }}%</div>
+                <div style="font-size: 0.7rem; color: var(--text-muted);">Persentase Kompeten</div>
             </div>
         </div>
     </div>
@@ -177,7 +177,7 @@
     <!-- 2. REKAPITULASI PER SKEMA SERTIFIKASI -->
     @if(!$selectedScheme)
     <div style="margin-bottom: 1.75rem;">
-        <h4 style="font-size: 0.925rem; font-weight: 700; color: #0f172a; margin-bottom: 0.75rem; text-transform: uppercase; border-left: 3px solid #4f46e5; padding-left: 0.5rem;">
+        <h4 style="font-size: 0.925rem; font-weight: 700; color: #0f172a; margin-bottom: 0.75rem; text-transform: uppercase; border-left: 3px solid var(--accent-primary); padding-left: 0.5rem;">
             II. Ringkasan Hasil Uji Tiap Skema Sertifikasi
         </h4>
 
@@ -216,7 +216,7 @@
 
     <!-- 3. RINCIAN TABEL SELURUH ASESI / PESERTA -->
     <div style="margin-bottom: 2rem;">
-        <h4 style="font-size: 0.925rem; font-weight: 700; color: #0f172a; margin-bottom: 0.75rem; text-transform: uppercase; border-left: 3px solid #4f46e5; padding-left: 0.5rem;">
+        <h4 style="font-size: 0.925rem; font-weight: 700; color: #0f172a; margin-bottom: 0.75rem; text-transform: uppercase; border-left: 3px solid var(--accent-primary); padding-left: 0.5rem;">
             {{ $selectedScheme ? 'II.' : 'III.' }} Daftar Rincian Penilaian Hasil Uji Peserta
         </h4>
 
@@ -250,6 +250,8 @@
                         <td style="text-align: center;">
                             @if(str_contains($p->status, 'Kompeten') && !str_contains($p->status, 'Belum'))
                                 <span class="print-badge print-badge-k">KOMPETEN (K)</span>
+                            @elseif(str_contains($p->status, 'Pending'))
+                                <span class="print-badge" style="background: #f0f9ff; color: #0369a1; border: 1px solid #bae6fd;">PENDING (PROSES)</span>
                             @else
                                 <span class="print-badge print-badge-bk">BELUM KOMPETEN (BK)</span>
                             @endif
@@ -318,7 +320,7 @@
             <hr style="border: none; border-top: 1px solid var(--border-subtle); margin: 1.25rem 0;">
 
             <!-- Bagian 1: KOP SURAT -->
-            <h4 style="font-size: 0.9rem; font-weight: 700; color: #4338ca; margin-bottom: 0.75rem;">1. IDENTITAS KOP SURAT RESMI</h4>
+            <h4 style="font-size: 0.9rem; font-weight: 700; color: var(--accent-primary); margin-bottom: 0.75rem;">1. IDENTITAS KOP SURAT RESMI</h4>
             <div class="form-group">
                 <label class="form-label">Nama Lembaga (Header 1)</label>
                 <input type="text" name="institution_name" id="inp_institution_name" class="form-control" required>
@@ -339,7 +341,7 @@
             <hr style="border: none; border-top: 1px solid var(--border-subtle); margin: 1.25rem 0;">
 
             <!-- Bagian 2: INFORMASI DOKUMEN & ASESMEN -->
-            <h4 style="font-size: 0.9rem; font-weight: 700; color: #4338ca; margin-bottom: 0.75rem;">2. DATA BERITA ACARA & UJI KOMPETENSI</h4>
+            <h4 style="font-size: 0.9rem; font-weight: 700; color: var(--accent-primary); margin-bottom: 0.75rem;">2. DATA BERITA ACARA & UJI KOMPETENSI</h4>
             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
                 <div class="form-group">
                     <label class="form-label">Judul Dokumen</label>
@@ -375,7 +377,7 @@
             <hr style="border: none; border-top: 1px solid var(--border-subtle); margin: 1.25rem 0;">
 
             <!-- Bagian 3: LEMBAR PENGESAHAN & TANDA TANGAN -->
-            <h4 style="font-size: 0.9rem; font-weight: 700; color: #4338ca; margin-bottom: 0.75rem;">3. PENGESAHAN & PENANDATANGAN</h4>
+            <h4 style="font-size: 0.9rem; font-weight: 700; color: var(--accent-primary); margin-bottom: 0.75rem;">3. PENGESAHAN & PENANDATANGAN</h4>
 
             <!-- Penandatangan 1 (Pimpinan) -->
             <div style="background: #f8fafc; border: 1px solid var(--border-subtle); border-radius: 6px; padding: 1rem; margin-bottom: 1rem;">

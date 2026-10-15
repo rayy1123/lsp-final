@@ -63,9 +63,9 @@
             align-items: center;
             gap: 0.4rem;
             font-size: 0.8rem;
-            color: #3730a3;
-            background: #eef2ff;
-            border: 1px solid #c7d2fe;
+            color: var(--accent-primary);
+            background: var(--accent-primary-light);
+            border: 1px solid var(--accent-primary-border);
             padding: 0.35rem 0.65rem;
             border-radius: var(--radius-sm);
             margin-bottom: 0.75rem;
@@ -164,7 +164,7 @@
                     <a href="{{ route('lsp.dashboard') }}" class="btn btn-primary" style="padding: 0.4rem 0.75rem; font-size: 0.8rem;">
                         Dashboard &rarr;
                     </a>
-                    <a href="{{ route('logout') }}" class="btn btn-secondary" style="padding: 0.4rem 0.65rem; font-size: 0.8rem; color: var(--accent-rose);" title="Keluar">
+                    <a href="{{ route('logout') }}" onclick="return confirm('Konfirmasi Keluar: Apakah Anda yakin ingin keluar dari sistem LSP?')" class="btn btn-secondary" style="padding: 0.4rem 0.65rem; font-size: 0.8rem; color: var(--accent-rose);" title="Keluar">
                         Keluar
                     </a>
                 @else
@@ -251,7 +251,7 @@
                         @forelse($schemes as $s)
                             <tr>
                                 <td>
-                                    <span class="badge badge-code" style="color: #4338ca; font-weight: 700;">{{ $s->scheme_code }}</span>
+                                    <span class="badge badge-code" style="color: var(--accent-primary); font-weight: 700;">{{ $s->scheme_code }}</span>
                                 </td>
                                 <td>
                                     <div style="font-weight: 600; color: var(--text-primary); font-size: 0.875rem;">{{ $s->scheme_name }}</div>

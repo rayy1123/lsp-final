@@ -13,6 +13,7 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Str;
 
 /**
  * Controller: LspController
@@ -28,6 +29,7 @@ class LspController extends Controller
      */
     public function landing()
     {
+        $this->ensureUserColumns();
         $this->ensureTransparentLogo();
         $schemes = collect();
         $totalSchemes = 0;
@@ -132,6 +134,9 @@ class LspController extends Controller
      * UNTUK APA: Memvalidasi dan menyimpan registrasi akun asesi (role user).
      * ATURAN VALIDASI:
      * - Nama: maksimal 50 karakter, tidak boleh mengandung angka, boleh tanda kutip (misal Ma'ruf).
+     * - NIK: maksimal 16 digit angka.
+     * - Jenis Kelamin: Laki-laki atau Perempuan.
+     * - Email: wajib alamat Gmail (@gmail.com).
      * - Nomor handphone: maksimal 13 karakter, angka saja.
      */
     public function register(Request $request)
@@ -143,31 +148,174 @@ class LspController extends Controller
                 'max:50',
                 'regex:/^[\p{L}\s\'`’\-]+$/u',
             ],
+            'nik' => [
+                'required',
+                'string',
+                'max:16',
+                'regex:/^[0-9]+$/',
+            ],
+            'gender' => [
+                'required',
+                'string',
+                'in:Laki-laki,Perempuan',
+            ],
+            'education_type' => [
+                'required',
+                'string',
+                'in:Siswa/Pelajar,Mahasiswa,Umum',
+            ],
+            'academic_title' => [
+                'nullable',
+                'string',
+                'max:50',
+            ],
             'phone_number' => [
                 'required',
                 'string',
                 'max:13',
                 'regex:/^[0-9+]+$/',
             ],
-            'email' => 'required|email|max:255',
+            'email' => [
+                'required',
+                'email',
+                'max:255',
+                'regex:/^[a-zA-Z0-9._%+-]+@gmail\.com$/i',
+            ],
             'password' => 'required|string|min:6|confirmed',
             'scheme_id' => 'nullable|exists:certification_schemes,id',
             'address' => 'nullable|string|max:500',
+            'id_card_file' => [
+                'nullable',
+                'file',
+                'max:2048',
+                'mimes:jpeg,jpg,png,webp,pdf',
+            ],
+            'report_sheet_file' => [
+                'nullable',
+                'file',
+                'max:2048',
+                'mimes:jpeg,jpg,png,webp,pdf,doc,docx',
+            ],
+            'certificate_file' => [
+                'nullable',
+                'file',
+                'max:2048',
+                'mimes:jpeg,jpg,png,webp,pdf,doc,docx',
+            ],
+            'diploma_file' => [
+                'nullable',
+                'file',
+                'max:2048',
+                'mimes:jpeg,jpg,png,webp,pdf,doc,docx',
+            ],
+            'photo_file' => [
+                'nullable',
+                'file',
+                'max:2048',
+                'mimes:jpeg,jpg,png,webp',
+            ],
+            'portfolio_file' => [
+                'nullable',
+                'file',
+                'max:2048',
+                'mimes:jpeg,jpg,png,webp,pdf,doc,docx,zip',
+            ],
         ], [
             'name.required' => 'Nama lengkap wajib diisi.',
             'name.max' => 'Nama lengkap maksimal 50 karakter.',
             'name.regex' => 'Nama tidak boleh mengandung angka (hanya huruf, spasi, dan tanda kutip yang diizinkan).',
+            'nik.required' => 'NIK (Nomor Induk Kependudukan) wajib diisi.',
+            'nik.max' => 'NIK maksimal 16 digit.',
+            'nik.regex' => 'NIK hanya boleh berupa angka (maksimal 16 digit).',
+            'gender.required' => 'Jenis kelamin wajib dipilih.',
+            'gender.in' => 'Pilihan jenis kelamin harus Laki-laki atau Perempuan.',
+            'education_type.required' => 'Kategori asesi (Siswa, Mahasiswa, atau Umum) wajib dipilih.',
+            'education_type.in' => 'Pilihan kategori asesi tidak valid.',
+            'academic_title.max' => 'Gelar akademik/profesi maksimal 50 karakter.',
+            'diploma_file.max' => 'Ukuran berkas ijazah/surat keterangan maksimal 2MB (2048 KB).',
+            'photo_file.max' => 'Ukuran pas foto maksimal 2MB (2048 KB).',
+            'portfolio_file.max' => 'Ukuran berkas portofolio maksimal 2MB (2048 KB).',
             'phone_number.required' => 'Nomor handphone wajib diisi.',
             'phone_number.max' => 'Nomor handphone maksimal 13 digit.',
             'phone_number.regex' => 'Nomor handphone hanya boleh berisi angka.',
             'email.required' => 'Alamat email wajib diisi.',
             'email.email' => 'Format email tidak valid.',
+            'email.regex' => 'Alamat email wajib menggunakan akun Gmail (@gmail.com).',
             'password.required' => 'Password wajib diisi.',
             'password.min' => 'Password minimal 6 karakter.',
             'password.confirmed' => 'Konfirmasi password tidak sesuai.',
+            'id_card_file.file' => 'Berkas foto KTP / Kartu Pelajar harus berupa berkas file.',
+            'id_card_file.max' => 'Ukuran foto KTP / Kartu Pelajar maksimal 2MB (2048 KB).',
+            'id_card_file.mimes' => 'Format foto KTP / Kartu Pelajar harus JPG, PNG, WEBP, atau PDF.',
+            'report_sheet_file.file' => 'Berkas rapor terakhir harus berupa berkas file.',
+            'report_sheet_file.max' => 'Ukuran berkas rapor terakhir maksimal 2MB (2048 KB).',
+            'report_sheet_file.mimes' => 'Format berkas rapor terakhir harus PDF, DOC, DOCX, JPG, atau PNG.',
+            'certificate_file.file' => 'Berkas sertifikat harus berupa berkas file.',
+            'certificate_file.max' => 'Ukuran berkas sertifikat maksimal 2MB (2048 KB).',
+            'certificate_file.mimes' => 'Format berkas sertifikat harus PDF, DOC, DOCX, JPG, atau PNG.',
         ]);
 
         $this->ensureUserColumns();
+
+        // Unggah Berkas Persyaratan Asesi
+        $targetDir = public_path('uploads/registrations');
+        if (!file_exists($targetDir)) {
+            @mkdir($targetDir, 0755, true);
+        }
+
+        $idCardPath = null;
+        if ($request->hasFile('id_card_file') && $request->file('id_card_file')->isValid()) {
+            $file = $request->file('id_card_file');
+            $ext = strtolower($file->getClientOriginalExtension());
+            $fileName = 'ktp_' . time() . '_' . Str::random(8) . '.' . $ext;
+            $file->move($targetDir, $fileName);
+            $idCardPath = 'uploads/registrations/' . $fileName;
+        }
+
+        $reportSheetPath = null;
+        if ($request->hasFile('report_sheet_file') && $request->file('report_sheet_file')->isValid()) {
+            $file = $request->file('report_sheet_file');
+            $ext = strtolower($file->getClientOriginalExtension());
+            $fileName = 'rapor_' . time() . '_' . Str::random(8) . '.' . $ext;
+            $file->move($targetDir, $fileName);
+            $reportSheetPath = 'uploads/registrations/' . $fileName;
+        }
+
+        $certificatePath = null;
+        if ($request->hasFile('certificate_file') && $request->file('certificate_file')->isValid()) {
+            $file = $request->file('certificate_file');
+            $ext = strtolower($file->getClientOriginalExtension());
+            $fileName = 'sertifikat_' . time() . '_' . Str::random(8) . '.' . $ext;
+            $file->move($targetDir, $fileName);
+            $certificatePath = 'uploads/registrations/' . $fileName;
+        }
+
+        $diplomaPath = null;
+        if ($request->hasFile('diploma_file') && $request->file('diploma_file')->isValid()) {
+            $file = $request->file('diploma_file');
+            $ext = strtolower($file->getClientOriginalExtension());
+            $fileName = 'ijazah_' . time() . '_' . Str::random(8) . '.' . $ext;
+            $file->move($targetDir, $fileName);
+            $diplomaPath = 'uploads/registrations/' . $fileName;
+        }
+
+        $photoPath = null;
+        if ($request->hasFile('photo_file') && $request->file('photo_file')->isValid()) {
+            $file = $request->file('photo_file');
+            $ext = strtolower($file->getClientOriginalExtension());
+            $fileName = 'foto_' . time() . '_' . Str::random(8) . '.' . $ext;
+            $file->move($targetDir, $fileName);
+            $photoPath = 'uploads/registrations/' . $fileName;
+        }
+
+        $portfolioPath = null;
+        if ($request->hasFile('portfolio_file') && $request->file('portfolio_file')->isValid()) {
+            $file = $request->file('portfolio_file');
+            $ext = strtolower($file->getClientOriginalExtension());
+            $fileName = 'portofolio_' . time() . '_' . Str::random(8) . '.' . $ext;
+            $file->move($targetDir, $fileName);
+            $portfolioPath = 'uploads/registrations/' . $fileName;
+        }
 
         $userData = [
             'name' => $validated['name'],
@@ -178,11 +326,41 @@ class LspController extends Controller
         if (Schema::hasColumn('users', 'role')) {
             $userData['role'] = 'user';
         }
+        if (Schema::hasColumn('users', 'nik')) {
+            $userData['nik'] = $validated['nik'];
+        }
+        if (Schema::hasColumn('users', 'gender')) {
+            $userData['gender'] = $validated['gender'];
+        }
+        if (Schema::hasColumn('users', 'education_type')) {
+            $userData['education_type'] = $validated['education_type'];
+        }
+        if (Schema::hasColumn('users', 'academic_title')) {
+            $userData['academic_title'] = in_array($validated['education_type'], ['Mahasiswa', 'Umum']) ? ($validated['academic_title'] ?? null) : null;
+        }
         if (Schema::hasColumn('users', 'phone_number')) {
             $userData['phone_number'] = $validated['phone_number'];
         }
         if (Schema::hasColumn('users', 'address')) {
             $userData['address'] = $validated['address'] ?? null;
+        }
+        if ($idCardPath && Schema::hasColumn('users', 'id_card_file')) {
+            $userData['id_card_file'] = $idCardPath;
+        }
+        if ($reportSheetPath && Schema::hasColumn('users', 'report_sheet_file')) {
+            $userData['report_sheet_file'] = $reportSheetPath;
+        }
+        if ($certificatePath && Schema::hasColumn('users', 'certificate_file')) {
+            $userData['certificate_file'] = $certificatePath;
+        }
+        if ($diplomaPath && Schema::hasColumn('users', 'diploma_file')) {
+            $userData['diploma_file'] = $diplomaPath;
+        }
+        if ($photoPath && Schema::hasColumn('users', 'photo_file')) {
+            $userData['photo_file'] = $photoPath;
+        }
+        if ($portfolioPath && Schema::hasColumn('users', 'portfolio_file')) {
+            $userData['portfolio_file'] = $portfolioPath;
         }
 
         // Cek jika akun sudah ada (misal akibat error registrasi peserta sebelumnya)
@@ -196,7 +374,7 @@ class LspController extends Controller
             }
         }
 
-        DB::transaction(function () use ($validated, $userData, $existingUser) {
+        DB::transaction(function () use ($validated, $userData, $existingUser, $idCardPath, $reportSheetPath, $certificatePath, $diplomaPath, $photoPath, $portfolioPath) {
             if ($existingUser) {
                 $existingUser->update($userData);
                 $user = $existingUser;
@@ -212,19 +390,41 @@ class LspController extends Controller
                     Participant::create([
                         'scheme_id' => $validated['scheme_id'],
                         'registration_number' => $regNumber,
+                        'nik' => $validated['nik'],
+                        'gender' => $validated['gender'],
+                        'education_type' => $userData['education_type'] ?? 'Siswa/Pelajar',
+                        'academic_title' => $userData['academic_title'] ?? null,
                         'full_name' => $validated['name'],
                         'email' => $validated['email'],
                         'phone_number' => $validated['phone_number'],
                         'address' => $validated['address'] ?? null,
-                        'status' => 'Belum Kompeten',
+                        'id_card_file' => $idCardPath,
+                        'report_sheet_file' => $reportSheetPath,
+                        'certificate_file' => $certificatePath,
+                        'diploma_file' => $diplomaPath,
+                        'photo_file' => $photoPath,
+                        'portfolio_file' => $portfolioPath,
+                        'status' => 'Pending',
                     ]);
                 } else {
-                    $participant->update([
+                    $partUpdate = [
                         'scheme_id' => $validated['scheme_id'],
+                        'nik' => $validated['nik'],
+                        'gender' => $validated['gender'],
+                        'education_type' => $userData['education_type'] ?? 'Siswa/Pelajar',
+                        'academic_title' => $userData['academic_title'] ?? null,
                         'full_name' => $validated['name'],
                         'phone_number' => $validated['phone_number'],
                         'address' => $validated['address'] ?? $participant->address,
-                    ]);
+                    ];
+                    if ($idCardPath) $partUpdate['id_card_file'] = $idCardPath;
+                    if ($reportSheetPath) $partUpdate['report_sheet_file'] = $reportSheetPath;
+                    if ($certificatePath) $partUpdate['certificate_file'] = $certificatePath;
+                    if ($diplomaPath) $partUpdate['diploma_file'] = $diplomaPath;
+                    if ($photoPath) $partUpdate['photo_file'] = $photoPath;
+                    if ($portfolioPath) $partUpdate['portfolio_file'] = $portfolioPath;
+
+                    $participant->update($partUpdate);
                 }
             }
         });
@@ -269,18 +469,23 @@ class LspController extends Controller
         if ($participant) {
             $participant->update([
                 'scheme_id' => $validated['scheme_id'],
+                'nik' => $user->nik ?? $participant->nik,
+                'gender' => $user->gender ?? $participant->gender,
                 'address' => $address ?: $participant->address,
+                'status' => 'Pending',
             ]);
         } else {
             $regNumber = $this->generateRegistrationNumber();
             Participant::create([
                 'scheme_id' => $validated['scheme_id'],
                 'registration_number' => $regNumber,
+                'nik' => $user->nik ?? null,
+                'gender' => $user->gender ?? null,
                 'full_name' => $user->name,
                 'email' => $user->email,
                 'phone_number' => $user->phone_number,
                 'address' => $address,
-                'status' => 'Belum Kompeten',
+                'status' => 'Pending',
             ]);
         }
 
@@ -335,6 +540,27 @@ class LspController extends Controller
                 'max:50',
                 'regex:/^[\p{L}\s\'`’\-]+$/u',
             ],
+            'nik' => [
+                'nullable',
+                'string',
+                'max:16',
+                'regex:/^[0-9]+$/',
+            ],
+            'gender' => [
+                'nullable',
+                'string',
+                'in:Laki-laki,Perempuan',
+            ],
+            'education_type' => [
+                'nullable',
+                'string',
+                'in:Siswa/Pelajar,Mahasiswa,Umum',
+            ],
+            'academic_title' => [
+                'nullable',
+                'string',
+                'max:50',
+            ],
             'phone_number' => [
                 'required',
                 'string',
@@ -343,27 +569,157 @@ class LspController extends Controller
             ],
             'password' => 'nullable|string|min:6',
             'address' => 'nullable|string|max:500',
+            'id_card_file' => 'nullable|file|max:2048|mimes:jpg,jpeg,png,webp,pdf',
+            'report_sheet_file' => 'nullable|file|max:2048|mimes:pdf,doc,docx,jpg,jpeg,png,webp',
+            'certificate_file' => 'nullable|file|max:2048|mimes:pdf,doc,docx,jpg,jpeg,png,webp',
+            'diploma_file' => 'nullable|file|max:2048|mimes:pdf,doc,docx,jpg,jpeg,png,webp',
+            'photo_file' => 'nullable|file|max:2048|mimes:jpg,jpeg,png,webp',
+            'portfolio_file' => 'nullable|file|max:2048|mimes:pdf,doc,docx,jpg,jpeg,png,webp,zip',
         ], [
             'name.required' => 'Nama lengkap wajib diisi.',
             'name.max' => 'Nama lengkap maksimal 50 karakter.',
             'name.regex' => 'Nama tidak boleh mengandung angka (hanya huruf, spasi, dan tanda kutip yang diizinkan).',
+            'nik.max' => 'NIK maksimal 16 digit.',
+            'nik.regex' => 'NIK hanya boleh berupa angka (maksimal 16 digit).',
+            'gender.in' => 'Pilihan jenis kelamin harus Laki-laki atau Perempuan.',
+            'education_type.in' => 'Kategori asesi harus Siswa/Pelajar, Mahasiswa, atau Umum.',
+            'academic_title.max' => 'Gelar akademik/profesi maksimal 50 karakter.',
             'phone_number.required' => 'Nomor handphone wajib diisi.',
             'phone_number.max' => 'Nomor handphone maksimal 13 karakter.',
             'phone_number.regex' => 'Nomor handphone hanya boleh berisi angka.',
             'password.min' => 'Password baru minimal terdiri dari 6 karakter.',
+            'id_card_file.file' => 'Berkas KTP/kartu pelajar harus berupa berkas file.',
+            'id_card_file.max' => 'Ukuran berkas KTP/kartu pelajar maksimal 2MB (2048 KB).',
+            'id_card_file.mimes' => 'Format berkas KTP harus JPG, PNG, atau PDF.',
+            'report_sheet_file.file' => 'Berkas rapor terakhir harus berupa berkas file.',
+            'report_sheet_file.max' => 'Ukuran berkas rapor terakhir maksimal 2MB (2048 KB).',
+            'report_sheet_file.mimes' => 'Format berkas rapor terakhir harus PDF, DOC, DOCX, JPG, atau PNG.',
+            'certificate_file.file' => 'Berkas sertifikat harus berupa berkas file.',
+            'certificate_file.max' => 'Ukuran berkas sertifikat maksimal 2MB (2048 KB).',
+            'certificate_file.mimes' => 'Format berkas sertifikat harus PDF, DOC, DOCX, JPG, atau PNG.',
+            'diploma_file.max' => 'Ukuran berkas ijazah/surat keterangan maksimal 2MB (2048 KB).',
+            'photo_file.max' => 'Ukuran pas foto maksimal 2MB (2048 KB).',
+            'portfolio_file.max' => 'Ukuran berkas portofolio maksimal 2MB (2048 KB).',
         ]);
 
         $this->ensureUserColumns();
+
+        $targetDir = public_path('uploads/registrations');
+        if (!file_exists($targetDir)) {
+            @mkdir($targetDir, 0755, true);
+        }
+
+        $idCardPath = null;
+        if ($request->hasFile('id_card_file') && $request->file('id_card_file')->isValid()) {
+            if ($user->id_card_file && file_exists(public_path($user->id_card_file))) {
+                @unlink(public_path($user->id_card_file));
+            }
+            $file = $request->file('id_card_file');
+            $ext = strtolower($file->getClientOriginalExtension());
+            $fileName = 'ktp_' . time() . '_' . Str::random(8) . '.' . $ext;
+            $file->move($targetDir, $fileName);
+            $idCardPath = 'uploads/registrations/' . $fileName;
+        }
+
+        $reportSheetPath = null;
+        if ($request->hasFile('report_sheet_file') && $request->file('report_sheet_file')->isValid()) {
+            if ($user->report_sheet_file && file_exists(public_path($user->report_sheet_file))) {
+                @unlink(public_path($user->report_sheet_file));
+            }
+            $file = $request->file('report_sheet_file');
+            $ext = strtolower($file->getClientOriginalExtension());
+            $fileName = 'rapor_' . time() . '_' . Str::random(8) . '.' . $ext;
+            $file->move($targetDir, $fileName);
+            $reportSheetPath = 'uploads/registrations/' . $fileName;
+        }
+
+        $certificatePath = null;
+        if ($request->hasFile('certificate_file') && $request->file('certificate_file')->isValid()) {
+            if ($user->certificate_file && file_exists(public_path($user->certificate_file))) {
+                @unlink(public_path($user->certificate_file));
+            }
+            $file = $request->file('certificate_file');
+            $ext = strtolower($file->getClientOriginalExtension());
+            $fileName = 'sertifikat_' . time() . '_' . Str::random(8) . '.' . $ext;
+            $file->move($targetDir, $fileName);
+            $certificatePath = 'uploads/registrations/' . $fileName;
+        }
+
+        $diplomaPath = null;
+        if ($request->hasFile('diploma_file') && $request->file('diploma_file')->isValid()) {
+            if ($user->diploma_file && file_exists(public_path($user->diploma_file))) {
+                @unlink(public_path($user->diploma_file));
+            }
+            $file = $request->file('diploma_file');
+            $ext = strtolower($file->getClientOriginalExtension());
+            $fileName = 'ijazah_' . time() . '_' . Str::random(8) . '.' . $ext;
+            $file->move($targetDir, $fileName);
+            $diplomaPath = 'uploads/registrations/' . $fileName;
+        }
+
+        $photoPath = null;
+        if ($request->hasFile('photo_file') && $request->file('photo_file')->isValid()) {
+            if ($user->photo_file && file_exists(public_path($user->photo_file))) {
+                @unlink(public_path($user->photo_file));
+            }
+            $file = $request->file('photo_file');
+            $ext = strtolower($file->getClientOriginalExtension());
+            $fileName = 'foto_' . time() . '_' . Str::random(8) . '.' . $ext;
+            $file->move($targetDir, $fileName);
+            $photoPath = 'uploads/registrations/' . $fileName;
+        }
+
+        $portfolioPath = null;
+        if ($request->hasFile('portfolio_file') && $request->file('portfolio_file')->isValid()) {
+            if ($user->portfolio_file && file_exists(public_path($user->portfolio_file))) {
+                @unlink(public_path($user->portfolio_file));
+            }
+            $file = $request->file('portfolio_file');
+            $ext = strtolower($file->getClientOriginalExtension());
+            $fileName = 'portofolio_' . time() . '_' . Str::random(8) . '.' . $ext;
+            $file->move($targetDir, $fileName);
+            $portfolioPath = 'uploads/registrations/' . $fileName;
+        }
 
         $userData = [
             'name' => $validated['name'],
             'phone_number' => $validated['phone_number'],
         ];
+        if (isset($validated['nik']) && Schema::hasColumn('users', 'nik')) {
+            $userData['nik'] = $validated['nik'];
+        }
+        if (isset($validated['gender']) && Schema::hasColumn('users', 'gender')) {
+            $userData['gender'] = $validated['gender'];
+        }
+        if (isset($validated['education_type']) && Schema::hasColumn('users', 'education_type')) {
+            $userData['education_type'] = $validated['education_type'];
+        }
+        if (Schema::hasColumn('users', 'academic_title')) {
+            $userData['academic_title'] = in_array($validated['education_type'] ?? '', ['Mahasiswa', 'Umum']) ? ($validated['academic_title'] ?? null) : null;
+        }
         if (!empty($validated['password'])) {
             $userData['password'] = Hash::make($validated['password']);
         }
         if (Schema::hasColumn('users', 'address')) {
             $userData['address'] = $validated['address'] ?? null;
+        }
+        if ($idCardPath && Schema::hasColumn('users', 'id_card_file')) {
+            $userData['id_card_file'] = $idCardPath;
+        }
+        if ($reportSheetPath && Schema::hasColumn('users', 'report_sheet_file')) {
+            $userData['report_sheet_file'] = $reportSheetPath;
+        }
+        if ($certificatePath && Schema::hasColumn('users', 'certificate_file')) {
+            $userData['certificate_file'] = $certificatePath;
+        }
+        if ($diplomaPath && Schema::hasColumn('users', 'diploma_file')) {
+            $userData['diploma_file'] = $diplomaPath;
+        }
+        if ($photoPath && Schema::hasColumn('users', 'photo_file')) {
+            $userData['photo_file'] = $photoPath;
+        }
+        if ($portfolioPath && Schema::hasColumn('users', 'portfolio_file')) {
+            $userData['portfolio_file'] = $portfolioPath;
         }
 
         $user->update($userData);
@@ -371,14 +727,325 @@ class LspController extends Controller
         // Sinkronkan ke record participants jika asesi sudah terdaftar pada skema
         $participant = Participant::where('email', $user->email)->first();
         if ($participant) {
-            $participant->update([
+            $participantData = [
                 'full_name' => $validated['name'],
                 'phone_number' => $validated['phone_number'],
                 'address' => $validated['address'] ?? $participant->address,
-            ]);
+            ];
+            if (isset($validated['nik'])) {
+                $participantData['nik'] = $validated['nik'];
+            }
+            if (isset($validated['gender'])) {
+                $participantData['gender'] = $validated['gender'];
+            }
+            if (isset($validated['education_type'])) {
+                $participantData['education_type'] = $validated['education_type'];
+            }
+            if (array_key_exists('academic_title', $userData)) {
+                $participantData['academic_title'] = $userData['academic_title'];
+            }
+            if ($idCardPath) {
+                $participantData['id_card_file'] = $idCardPath;
+            }
+            if ($reportSheetPath) {
+                $participantData['report_sheet_file'] = $reportSheetPath;
+            }
+            if ($certificatePath) {
+                $participantData['certificate_file'] = $certificatePath;
+            }
+            if ($diplomaPath) {
+                $participantData['diploma_file'] = $diplomaPath;
+            }
+            if ($photoPath) {
+                $participantData['photo_file'] = $photoPath;
+            }
+            if ($portfolioPath) {
+                $participantData['portfolio_file'] = $portfolioPath;
+            }
+            $participant->update($participantData);
         }
 
-        return back()->with('success', 'Master data & biodata akun asesi berhasil diperbarui.');
+        return back()->with('success', 'Master data, biodata akun, dan berkas persyaratan asesi berhasil diperbarui.');
+    }
+
+    /**
+     * FUNGSI: updateUser()
+     * UNTUK APA: Administrator memperbarui master biodata akun pengguna / asesi dan dokumen persyaratan.
+     */
+    public function updateUser(Request $request, User $user)
+    {
+        if (!Auth::user()->isAdmin()) {
+            abort(403, 'Akses khusus administrator.');
+        }
+
+        $validated = $request->validate([
+            'name' => [
+                'required',
+                'string',
+                'max:50',
+                'regex:/^[\p{L}\s\'`’\-]+$/u',
+            ],
+            'email' => [
+                'required',
+                'email',
+                'max:100',
+                'unique:users,email,' . $user->id,
+            ],
+            'nik' => [
+                'nullable',
+                'string',
+                'max:16',
+                'regex:/^[0-9]+$/',
+            ],
+            'gender' => [
+                'nullable',
+                'string',
+                'in:Laki-laki,Perempuan',
+            ],
+            'education_type' => [
+                'nullable',
+                'string',
+                'in:Siswa/Pelajar,Mahasiswa,Umum',
+            ],
+            'academic_title' => [
+                'nullable',
+                'string',
+                'max:50',
+            ],
+            'phone_number' => [
+                'required',
+                'string',
+                'max:13',
+                'regex:/^[0-9+]+$/',
+            ],
+            'address' => 'nullable|string|max:500',
+            'password' => 'nullable|string|min:6',
+            'id_card_file' => 'nullable|file|max:2048|mimes:jpg,jpeg,png,webp,pdf',
+            'report_sheet_file' => 'nullable|file|max:2048|mimes:pdf,doc,docx,jpg,jpeg,png,webp',
+            'certificate_file' => 'nullable|file|max:2048|mimes:pdf,doc,docx,jpg,jpeg,png,webp',
+            'diploma_file' => 'nullable|file|max:2048|mimes:pdf,doc,docx,jpg,jpeg,png,webp',
+            'photo_file' => 'nullable|file|max:2048|mimes:jpg,jpeg,png,webp',
+            'portfolio_file' => 'nullable|file|max:2048|mimes:pdf,doc,docx,jpg,jpeg,png,webp,zip',
+        ], [
+            'name.required' => 'Nama lengkap wajib diisi.',
+            'name.max' => 'Nama lengkap maksimal 50 karakter.',
+            'name.regex' => 'Nama tidak boleh mengandung angka.',
+            'email.required' => 'Email wajib diisi.',
+            'email.email' => 'Format email tidak valid.',
+            'email.unique' => 'Email ini sudah digunakan oleh akun lain.',
+            'nik.max' => 'NIK maksimal 16 digit.',
+            'nik.regex' => 'NIK hanya boleh berisi angka.',
+            'gender.in' => 'Pilihan jenis kelamin harus Laki-laki atau Perempuan.',
+            'education_type.in' => 'Kategori asesi harus Siswa/Pelajar, Mahasiswa, atau Umum.',
+            'academic_title.max' => 'Gelar akademik/profesi maksimal 50 karakter.',
+            'phone_number.required' => 'Nomor handphone wajib diisi.',
+            'phone_number.max' => 'Nomor handphone maksimal 13 karakter.',
+            'phone_number.regex' => 'Nomor handphone hanya boleh berisi angka.',
+            'password.min' => 'Password minimal 6 karakter.',
+            'id_card_file.max' => 'Ukuran berkas KTP maksimal 2MB (2048 KB).',
+            'report_sheet_file.max' => 'Ukuran berkas rapor maksimal 2MB (2048 KB).',
+            'certificate_file.max' => 'Ukuran berkas sertifikat maksimal 2MB (2048 KB).',
+            'diploma_file.max' => 'Ukuran berkas ijazah/surat keterangan maksimal 2MB (2048 KB).',
+            'photo_file.max' => 'Ukuran pas foto maksimal 2MB (2048 KB).',
+            'portfolio_file.max' => 'Ukuran berkas portofolio maksimal 2MB (2048 KB).',
+        ]);
+
+        $this->ensureUserColumns();
+
+        $targetDir = public_path('uploads/registrations');
+        if (!file_exists($targetDir)) {
+            @mkdir($targetDir, 0755, true);
+        }
+
+        $idCardPath = null;
+        if ($request->hasFile('id_card_file') && $request->file('id_card_file')->isValid()) {
+            if ($user->id_card_file && file_exists(public_path($user->id_card_file))) {
+                @unlink(public_path($user->id_card_file));
+            }
+            $file = $request->file('id_card_file');
+            $ext = strtolower($file->getClientOriginalExtension());
+            $fileName = 'ktp_' . time() . '_' . Str::random(8) . '.' . $ext;
+            $file->move($targetDir, $fileName);
+            $idCardPath = 'uploads/registrations/' . $fileName;
+        }
+
+        $reportSheetPath = null;
+        if ($request->hasFile('report_sheet_file') && $request->file('report_sheet_file')->isValid()) {
+            if ($user->report_sheet_file && file_exists(public_path($user->report_sheet_file))) {
+                @unlink(public_path($user->report_sheet_file));
+            }
+            $file = $request->file('report_sheet_file');
+            $ext = strtolower($file->getClientOriginalExtension());
+            $fileName = 'rapor_' . time() . '_' . Str::random(8) . '.' . $ext;
+            $file->move($targetDir, $fileName);
+            $reportSheetPath = 'uploads/registrations/' . $fileName;
+        }
+
+        $certificatePath = null;
+        if ($request->hasFile('certificate_file') && $request->file('certificate_file')->isValid()) {
+            if ($user->certificate_file && file_exists(public_path($user->certificate_file))) {
+                @unlink(public_path($user->certificate_file));
+            }
+            $file = $request->file('certificate_file');
+            $ext = strtolower($file->getClientOriginalExtension());
+            $fileName = 'sertifikat_' . time() . '_' . Str::random(8) . '.' . $ext;
+            $file->move($targetDir, $fileName);
+            $certificatePath = 'uploads/registrations/' . $fileName;
+        }
+
+        $diplomaPath = null;
+        if ($request->hasFile('diploma_file') && $request->file('diploma_file')->isValid()) {
+            if ($user->diploma_file && file_exists(public_path($user->diploma_file))) {
+                @unlink(public_path($user->diploma_file));
+            }
+            $file = $request->file('diploma_file');
+            $ext = strtolower($file->getClientOriginalExtension());
+            $fileName = 'ijazah_' . time() . '_' . Str::random(8) . '.' . $ext;
+            $file->move($targetDir, $fileName);
+            $diplomaPath = 'uploads/registrations/' . $fileName;
+        }
+
+        $photoPath = null;
+        if ($request->hasFile('photo_file') && $request->file('photo_file')->isValid()) {
+            if ($user->photo_file && file_exists(public_path($user->photo_file))) {
+                @unlink(public_path($user->photo_file));
+            }
+            $file = $request->file('photo_file');
+            $ext = strtolower($file->getClientOriginalExtension());
+            $fileName = 'foto_' . time() . '_' . Str::random(8) . '.' . $ext;
+            $file->move($targetDir, $fileName);
+            $photoPath = 'uploads/registrations/' . $fileName;
+        }
+
+        $portfolioPath = null;
+        if ($request->hasFile('portfolio_file') && $request->file('portfolio_file')->isValid()) {
+            if ($user->portfolio_file && file_exists(public_path($user->portfolio_file))) {
+                @unlink(public_path($user->portfolio_file));
+            }
+            $file = $request->file('portfolio_file');
+            $ext = strtolower($file->getClientOriginalExtension());
+            $fileName = 'portofolio_' . time() . '_' . Str::random(8) . '.' . $ext;
+            $file->move($targetDir, $fileName);
+            $portfolioPath = 'uploads/registrations/' . $fileName;
+        }
+
+        $oldEmail = $user->email;
+        $userData = [
+            'name' => $validated['name'],
+            'email' => $validated['email'],
+            'phone_number' => $validated['phone_number'],
+        ];
+
+        if (isset($validated['nik']) && Schema::hasColumn('users', 'nik')) {
+            $userData['nik'] = $validated['nik'];
+        }
+        if (isset($validated['gender']) && Schema::hasColumn('users', 'gender')) {
+            $userData['gender'] = $validated['gender'];
+        }
+        if (isset($validated['education_type']) && Schema::hasColumn('users', 'education_type')) {
+            $userData['education_type'] = $validated['education_type'];
+        }
+        if (Schema::hasColumn('users', 'academic_title')) {
+            $userData['academic_title'] = in_array($validated['education_type'] ?? '', ['Mahasiswa', 'Umum']) ? ($validated['academic_title'] ?? null) : null;
+        }
+        if (!empty($validated['password'])) {
+            $userData['password'] = Hash::make($validated['password']);
+        }
+        if (Schema::hasColumn('users', 'address')) {
+            $userData['address'] = $validated['address'] ?? null;
+        }
+        if ($idCardPath && Schema::hasColumn('users', 'id_card_file')) {
+            $userData['id_card_file'] = $idCardPath;
+        }
+        if ($reportSheetPath && Schema::hasColumn('users', 'report_sheet_file')) {
+            $userData['report_sheet_file'] = $reportSheetPath;
+        }
+        if ($certificatePath && Schema::hasColumn('users', 'certificate_file')) {
+            $userData['certificate_file'] = $certificatePath;
+        }
+        if ($diplomaPath && Schema::hasColumn('users', 'diploma_file')) {
+            $userData['diploma_file'] = $diplomaPath;
+        }
+        if ($photoPath && Schema::hasColumn('users', 'photo_file')) {
+            $userData['photo_file'] = $photoPath;
+        }
+        if ($portfolioPath && Schema::hasColumn('users', 'portfolio_file')) {
+            $userData['portfolio_file'] = $portfolioPath;
+        }
+
+        $user->update($userData);
+
+        // Sinkronkan ke data peserta (Participant)
+        $participant = Participant::where('email', $oldEmail)->first();
+        if ($participant) {
+            $partData = [
+                'full_name' => $validated['name'],
+                'email' => $validated['email'],
+                'phone_number' => $validated['phone_number'],
+                'address' => $validated['address'] ?? $participant->address,
+            ];
+            if (isset($validated['nik'])) {
+                $partData['nik'] = $validated['nik'];
+            }
+            if (isset($validated['gender'])) {
+                $partData['gender'] = $validated['gender'];
+            }
+            if (isset($validated['education_type'])) {
+                $partData['education_type'] = $validated['education_type'];
+            }
+            if (array_key_exists('academic_title', $userData)) {
+                $partData['academic_title'] = $userData['academic_title'];
+            }
+            if ($idCardPath) {
+                $partData['id_card_file'] = $idCardPath;
+            }
+            if ($reportSheetPath) {
+                $partData['report_sheet_file'] = $reportSheetPath;
+            }
+            if ($certificatePath) {
+                $partData['certificate_file'] = $certificatePath;
+            }
+            if ($diplomaPath) {
+                $partData['diploma_file'] = $diplomaPath;
+            }
+            if ($photoPath) {
+                $partData['photo_file'] = $photoPath;
+            }
+            if ($portfolioPath) {
+                $partData['portfolio_file'] = $portfolioPath;
+            }
+            $participant->update($partData);
+        }
+
+        return back()->with('success', "Biodata akun {$user->name} berhasil diperbarui.");
+    }
+
+    /**
+     * FUNGSI: destroyUser()
+     * UNTUK APA: Menghapus akun pengguna dan biodata peserta terkait (khusus Admin).
+     */
+    public function destroyUser(User $user)
+    {
+        if (!Auth::user()->isAdmin()) {
+            abort(403, 'Akses khusus administrator.');
+        }
+
+        if ($user->id === Auth::id()) {
+            return back()->withErrors(['error' => 'Anda tidak dapat menghapus akun administrator yang sedang aktif digunakan.']);
+        }
+
+        foreach (['id_card_file', 'report_sheet_file', 'certificate_file', 'diploma_file', 'photo_file', 'portfolio_file'] as $col) {
+            if ($user->$col && file_exists(public_path($user->$col))) {
+                @unlink(public_path($user->$col));
+            }
+        }
+
+        Participant::where('email', $user->email)->delete();
+
+        $userName = $user->name;
+        $user->delete();
+
+        return back()->with('success', "Akun pengguna {$userName} berhasil dihapus dari sistem.");
     }
 
     /**
@@ -440,11 +1107,28 @@ class LspController extends Controller
             ->where('status', 'like', '%Kompeten%')
             ->count();
         $totalBelum = Participant::where('status', 'like', '%Belum%')->count();
+        $totalPending = Participant::where(function($q) {
+            $q->where('status', 'like', '%Pending%')
+              ->orWhereNull('status')
+              ->orWhere(function($sub) {
+                  $sub->where('status', 'not like', '%Kompeten%')
+                      ->where('status', 'not like', '%Belum%');
+              });
+        })->count();
         $recentParticipants = Participant::with('scheme')->latest()->take(5)->get();
 
         // Data Penyelesaian Tugas Ujian untuk Verifikasi di Dashboard Admin
         $taskSubmissions = TaskSubmission::with(['task.scheme', 'participant', 'user'])->latest()->get();
         $assessmentTasks = AssessmentTask::with('scheme')->latest()->get();
+
+        // Master Data Akun User & Asesi (Khusus Dashboard Admin)
+        $allUsers = collect();
+        if ($user->isAdmin()) {
+            $allUsers = User::with(['participant.scheme.tasks', 'participant.submissions'])
+                ->orderBy('role', 'asc')
+                ->latest()
+                ->get();
+        }
 
         // Data khusus untuk role User/Asesi
         $myParticipant = Participant::with('scheme')->where('email', $user->email)->first();
@@ -460,29 +1144,57 @@ class LspController extends Controller
                 ->get();
         }
 
-        // Kalkulasi Kelengkapan Master Data Akun User (100% jika nama, email, hp, dan domisili terisi)
-        $profileFields = [
-            'name' => !empty($user->name),
-            'email' => !empty($user->email),
-            'phone_number' => !empty($user->phone_number),
-            'address' => !empty($user->address ?? $myParticipant?->address),
+        // Kalkulasi Kelengkapan Master Data Akun & 6 Berkas Dokumen Persyaratan Asesi
+        $idCard = !empty($user->id_card_file ?: ($myParticipant?->id_card_file ?? null));
+        $reportSheet = !empty($user->report_sheet_file ?: ($myParticipant?->report_sheet_file ?? null));
+        $certificate = !empty($user->certificate_file ?: ($myParticipant?->certificate_file ?? null));
+        $diploma = !empty($user->diploma_file ?: ($myParticipant?->diploma_file ?? null));
+        $photo = !empty($user->photo_file ?: ($myParticipant?->photo_file ?? null));
+        $portfolio = !empty($user->portfolio_file ?: ($myParticipant?->portfolio_file ?? null));
+
+        $docFields = [
+            'id_card_file' => $idCard,
+            'report_sheet_file' => $reportSheet,
+            'certificate_file' => $certificate,
+            'diploma_file' => $diploma,
+            'photo_file' => $photo,
+            'portfolio_file' => $portfolio,
         ];
+        $uploadedDocsCount = count(array_filter($docFields));
+        $totalDocsCount = count($docFields);
+
+        $biodataFields = [
+            'name' => !empty($user->name),
+            'nik' => !empty($user->nik ?: ($myParticipant?->nik ?? null)),
+            'gender' => !empty($user->gender ?: ($myParticipant?->gender ?? null)),
+            'email' => !empty($user->email),
+            'phone_number' => !empty($user->phone_number ?: ($myParticipant?->phone_number ?? null)),
+            'address' => !empty($user->address ?: ($myParticipant?->address ?? null)),
+        ];
+
+        $profileFields = array_merge($biodataFields, $docFields);
         $completedCount = count(array_filter($profileFields));
-        $profileCompleteness = round(($completedCount / count($profileFields)) * 100);
+        $profileCompleteness = (int) round(($completedCount / count($profileFields)) * 100);
 
         return view('lsp.dashboard', compact(
             'totalParticipants',
             'totalSchemes',
             'totalKompeten',
             'totalBelum',
+            'totalPending',
             'recentParticipants',
             'taskSubmissions',
             'assessmentTasks',
+            'allUsers',
             'myParticipant',
             'allSchemes',
             'schemeTasks',
             'profileCompleteness',
-            'profileFields'
+            'profileFields',
+            'biodataFields',
+            'docFields',
+            'uploadedDocsCount',
+            'totalDocsCount'
         ));
     }
 
@@ -496,6 +1208,8 @@ class LspController extends Controller
      */
     public function schemes(Request $request)
     {
+        $this->ensureUserColumns();
+
         $search = $request->input('search');
         $myParticipant = null;
         $currentScheme = null;
@@ -519,8 +1233,11 @@ class LspController extends Controller
             // Role User / Asesi: Ambil data skema yang sedang aktif dikerjakan
             $myParticipant = Participant::where('email', Auth::user()->email)->with('scheme')->first();
             $currentScheme = $myParticipant ? $myParticipant->scheme : null;
+            if ($currentScheme) {
+                $currentScheme->loadCount('participants');
+            }
 
-            $query = CertificationScheme::latest();
+            $query = CertificationScheme::withCount('participants')->latest();
 
             // Kecualikan skema yang sedang aktif dikerjakan asesi dari daftar pilihan
             if ($currentScheme) {
@@ -608,6 +1325,8 @@ class LspController extends Controller
             return redirect()->route('lsp.dashboard')->withErrors(['error' => 'Akses data peserta hanya untuk administrator.']);
         }
 
+        $this->ensureUserColumns();
+
         $search = $request->input('search');
         $query = Participant::with(['scheme.tasks', 'submissions'])->latest();
 
@@ -652,6 +1371,17 @@ class LspController extends Controller
         $validated = $request->validate([
             'scheme_id' => 'required|exists:certification_schemes,id',
             'registration_number' => 'required|string|unique:participants,registration_number',
+            'nik' => [
+                'nullable',
+                'string',
+                'max:16',
+                'regex:/^[0-9]+$/',
+            ],
+            'gender' => [
+                'nullable',
+                'string',
+                'in:Laki-laki,Perempuan',
+            ],
             'full_name' => [
                 'required',
                 'string',
@@ -668,6 +1398,9 @@ class LspController extends Controller
             'address' => 'nullable|string',
             'status' => 'required|string',
         ], [
+            'nik.max' => 'NIK maksimal 16 digit.',
+            'nik.regex' => 'NIK hanya boleh berupa angka (maksimal 16 digit).',
+            'gender.in' => 'Pilihan jenis kelamin harus Laki-laki atau Perempuan.',
             'full_name.required' => 'Nama lengkap wajib diisi.',
             'full_name.max' => 'Nama lengkap maksimal 50 karakter.',
             'full_name.regex' => 'Nama tidak boleh mengandung angka (hanya huruf, spasi, dan tanda kutip).',
@@ -701,6 +1434,12 @@ class LspController extends Controller
         if (empty($userAccount->address) && !empty($validated['address']) && Schema::hasColumn('users', 'address')) {
             $userAccount->update(['address' => $validated['address']]);
         }
+        if (empty($userAccount->nik) && !empty($validated['nik']) && Schema::hasColumn('users', 'nik')) {
+            $userAccount->update(['nik' => $validated['nik']]);
+        }
+        if (empty($userAccount->gender) && !empty($validated['gender']) && Schema::hasColumn('users', 'gender')) {
+            $userAccount->update(['gender' => $validated['gender']]);
+        }
 
         // Validasi metrik tugas untuk status Kompeten
         if (str_contains($validated['status'], 'Kompeten') && !str_contains($validated['status'], 'Belum')) {
@@ -729,6 +1468,17 @@ class LspController extends Controller
         $validated = $request->validate([
             'scheme_id' => 'required|exists:certification_schemes,id',
             'registration_number' => 'required|string|unique:participants,registration_number,' . $participant->id,
+            'nik' => [
+                'nullable',
+                'string',
+                'max:16',
+                'regex:/^[0-9]+$/',
+            ],
+            'gender' => [
+                'nullable',
+                'string',
+                'in:Laki-laki,Perempuan',
+            ],
             'full_name' => [
                 'required',
                 'string',
@@ -745,6 +1495,9 @@ class LspController extends Controller
             'address' => 'nullable|string',
             'status' => 'required|string',
         ], [
+            'nik.max' => 'NIK maksimal 16 digit.',
+            'nik.regex' => 'NIK hanya boleh berupa angka (maksimal 16 digit).',
+            'gender.in' => 'Pilihan jenis kelamin harus Laki-laki atau Perempuan.',
             'full_name.required' => 'Nama lengkap wajib diisi.',
             'full_name.max' => 'Nama lengkap maksimal 50 karakter.',
             'full_name.regex' => 'Nama tidak boleh mengandung angka (hanya huruf, spasi, dan tanda kutip).',
@@ -809,6 +1562,8 @@ class LspController extends Controller
         if (!Auth::user()->isAdmin()) {
             return redirect()->route('lsp.dashboard')->withErrors(['error' => 'Akses laporan berita acara hanya untuk administrator.']);
         }
+
+        $this->ensureUserColumns();
 
         $schemeId = $request->input('scheme_id');
         $settingId = $request->input('setting_id');
@@ -1047,32 +1802,67 @@ class LspController extends Controller
 
         $validated = $request->validate([
             'submission_content' => 'required|string|max:2000',
+            'submission_file' => 'nullable|file|max:1024|mimes:png,jpg,jpeg,webp,pdf,doc,docx,zip',
         ], [
-            'submission_content.required' => 'Bukti jawaban, tautan tugas/portofolio wajib diisi.',
-            'submission_content.max' => 'Konten jawaban maksimal 2000 karakter.',
+            'submission_content.required' => 'Bukti jawaban, uraian pengerjaan, atau tautan tugas/portofolio wajib diisi.',
+            'submission_content.max' => 'Konten uraian jawaban maksimal 2000 karakter.',
+            'submission_file.max' => 'Ukuran berkas/gambar maksimal 1MB (1024 KB).',
+            'submission_file.mimes' => 'Format berkas harus berupa gambar (png, jpg, jpeg, webp) atau dokumen (pdf, doc, docx, zip).',
         ]);
 
         $this->ensureExamTables();
+
+        $uploadedPath = null;
+        $uploadedName = null;
+        $uploadedType = null;
+
+        if ($request->hasFile('submission_file') && $request->file('submission_file')->isValid()) {
+            $file = $request->file('submission_file');
+            $ext = strtolower($file->getClientOriginalExtension());
+            $uploadedName = $file->getClientOriginalName();
+            $uploadedType = in_array($ext, ['png', 'jpg', 'jpeg', 'webp', 'gif', 'svg']) ? 'image' : 'document';
+
+            $targetDir = public_path('uploads/submissions');
+            if (!file_exists($targetDir)) {
+                mkdir($targetDir, 0755, true);
+            }
+            $safeFileName = 'task_' . $task->id . '_part_' . $participant->id . '_' . time() . '.' . $ext;
+            $file->move($targetDir, $safeFileName);
+            $uploadedPath = 'uploads/submissions/' . $safeFileName;
+        }
 
         $existing = TaskSubmission::where('task_id', $task->id)
             ->where('participant_id', $participant->id)
             ->first();
 
         if ($existing) {
+            // Jika ada unggahan berkas baru dan berkas lama ada, bersihkan berkas lama
+            if ($uploadedPath && $existing->file_path && file_exists(public_path($existing->file_path))) {
+                @unlink(public_path($existing->file_path));
+            }
+
             // Pembaruan atau revisi tugas dari asesi (memicu notifikasi perubahan isi di dashboard admin)
             $revisionCount = ($existing->revision_count ?? 0) + 1;
-            $existing->update([
+            $updateData = [
                 'user_id' => $user->id,
                 'submission_content' => $validated['submission_content'],
                 'status' => 'Pembaruan / Revisi',
                 'is_revised' => true,
                 'revision_count' => $revisionCount,
                 'admin_notes' => null,
-            ]);
+            ];
 
-            // Jika sebelumnya sudah kompeten tetapi bukti tugas direvisi ulang, status kelulusan dikembalikan ke Belum Kompeten hingga ditinjau kembali
-            if (str_contains($participant->status, 'Kompeten') && !str_contains($participant->status, 'Belum')) {
-                $participant->update(['status' => 'Belum Kompeten']);
+            if ($uploadedPath) {
+                $updateData['file_path'] = $uploadedPath;
+                $updateData['file_name'] = $uploadedName;
+                $updateData['file_type'] = $uploadedType;
+            }
+
+            $existing->update($updateData);
+
+            // Jika asesi mengirim pembaruan/revisi tugas, status kelulusan disetel ke Pending (menunggu peninjauan kembali oleh asesor)
+            if ($participant) {
+                $participant->update(['status' => 'Pending']);
             }
 
             return back()->with('success', 'Pembaruan tugas ujian berhasil dikirim! Asesor akan menerima notifikasi perubahan isi tugas.');
@@ -1082,11 +1872,19 @@ class LspController extends Controller
                 'participant_id' => $participant->id,
                 'user_id' => $user->id,
                 'submission_content' => $validated['submission_content'],
+                'file_path' => $uploadedPath,
+                'file_name' => $uploadedName,
+                'file_type' => $uploadedType,
                 'status' => 'Menunggu Peninjauan',
                 'is_revised' => false,
                 'revision_count' => 0,
                 'admin_notes' => null,
             ]);
+
+            // Jika status asesi sebelumnya Belum Kompeten dan mengunggah tugas baru, status disetel ke Pending
+            if ($participant && $participant->status === 'Belum Kompeten') {
+                $participant->update(['status' => 'Pending']);
+            }
 
             return back()->with('success', 'Tugas ujian berhasil dikumpulkan dan menunggu pengecekan asesor.');
         }
@@ -1123,8 +1921,16 @@ class LspController extends Controller
                 ->count();
 
             if ($totalTasks > 0 && $acceptedSubmissions >= $totalTasks) {
-                $participant->update(['status' => 'Kompensasi / Kompeten']);
+                $participant->update(['status' => 'Kompeten']);
                 return back()->with('success', 'Tugas disetujui (Diterima). Seluruh unit tugas telah terpenuhi, status peserta otomatis terverifikasi Kompeten!');
+            }
+
+            // Jika belum semua unit tugas terpenuhi namun tidak ada yang ditolak, status tetap Pending
+            $hasRejected = TaskSubmission::where('participant_id', $participant->id)
+                ->where('status', 'Ditolak')
+                ->exists();
+            if (!$hasRejected) {
+                $participant->update(['status' => 'Pending']);
             }
         } elseif ($participant && $validated['status'] === 'Ditolak') {
             $participant->update(['status' => 'Belum Kompeten']);
@@ -1164,6 +1970,9 @@ class LspController extends Controller
                     $table->foreignId('participant_id')->constrained('participants')->onDelete('cascade');
                     $table->foreignId('user_id')->nullable()->constrained('users')->onDelete('cascade');
                     $table->text('submission_content');
+                    $table->string('file_path')->nullable();
+                    $table->string('file_name')->nullable();
+                    $table->string('file_type', 50)->nullable();
                     $table->string('status', 50)->default('Menunggu Peninjauan');
                     $table->boolean('is_revised')->default(false);
                     $table->integer('revision_count')->default(0);
@@ -1171,6 +1980,13 @@ class LspController extends Controller
                     $table->timestamps();
                 });
             } else {
+                if (!Schema::hasColumn('task_submissions', 'file_path')) {
+                    Schema::table('task_submissions', function (\Illuminate\Database\Schema\Blueprint $table) {
+                        $table->string('file_path')->nullable()->after('submission_content');
+                        $table->string('file_name')->nullable()->after('file_path');
+                        $table->string('file_type', 50)->nullable()->after('file_name');
+                    });
+                }
                 if (!Schema::hasColumn('task_submissions', 'is_revised')) {
                     Schema::table('task_submissions', function (\Illuminate\Database\Schema\Blueprint $table) {
                         $table->boolean('is_revised')->default(false)->after('status');
@@ -1213,23 +2029,59 @@ class LspController extends Controller
                     if (!Schema::hasColumn('users', 'role')) {
                         $table->string('role')->default('user')->after('email');
                     }
+                    if (!Schema::hasColumn('users', 'nik')) {
+                        $table->string('nik', 16)->nullable()->after('name');
+                    }
+                    if (!Schema::hasColumn('users', 'gender')) {
+                        $table->string('gender', 20)->nullable()->after('nik');
+                    }
+                    if (!Schema::hasColumn('users', 'education_type')) {
+                        $table->string('education_type', 50)->default('Siswa/Pelajar')->after('gender');
+                    }
+                    if (!Schema::hasColumn('users', 'academic_title')) {
+                        $table->string('academic_title', 50)->nullable()->after('education_type');
+                    }
                     if (!Schema::hasColumn('users', 'phone_number')) {
                         $table->string('phone_number', 20)->nullable()->after('role');
                     }
                     if (!Schema::hasColumn('users', 'address')) {
                         $table->text('address')->nullable()->after('phone_number');
                     }
+                    if (!Schema::hasColumn('users', 'id_card_file')) {
+                        $table->string('id_card_file', 255)->nullable()->after('address');
+                    }
+                    if (!Schema::hasColumn('users', 'report_sheet_file')) {
+                        $table->string('report_sheet_file', 255)->nullable()->after('id_card_file');
+                    }
+                    if (!Schema::hasColumn('users', 'certificate_file')) {
+                        $table->string('certificate_file', 255)->nullable()->after('report_sheet_file');
+                    }
+                    if (!Schema::hasColumn('users', 'diploma_file')) {
+                        $table->string('diploma_file', 255)->nullable()->after('certificate_file');
+                    }
+                    if (!Schema::hasColumn('users', 'photo_file')) {
+                        $table->string('photo_file', 255)->nullable()->after('diploma_file');
+                    }
+                    if (!Schema::hasColumn('users', 'portfolio_file')) {
+                        $table->string('portfolio_file', 255)->nullable()->after('photo_file');
+                    }
                 });
 
                 // Hapus akun admin lama yang salah role
                 User::where('email', 'admin@lsp.id')->delete();
 
-                // Bersihkan akun sarah yang tertinggal di tabel users setelah data peserta dihapus
+                // Bersihkan akun sarah/duplikat yang diminta dihapus oleh admin
                 User::where(function($q) {
                     $q->where('email', 'like', 'sarah@gma%')
                       ->orWhere('email', 'sarah@gmai.com')
-                      ->orWhere('email', 'sarah@gmail.com');
+                      ->orWhere('email', 'sarah@gmail.com')
+                      ->orWhere('email', 'radata@gmail.com')
+                      ->orWhere('email', 'ara@gmail.com');
                 })->where('role', '!=', 'admin')->delete();
+
+                // Hapus peserta yatim / orphan yang akun login database-nya sudah tidak ada
+                $existingEmails = User::pluck('email')->filter()->toArray();
+                Participant::whereNotIn('email', $existingEmails)->delete();
 
                 // Pastikan admin@gmail.com aktif sebagai Administrator
                 if (Schema::hasColumn('users', 'role')) {
@@ -1249,6 +2101,41 @@ class LspController extends Controller
                         ]);
                     }
                 }
+            }
+
+            if (Schema::hasTable('participants')) {
+                Schema::table('participants', function (\Illuminate\Database\Schema\Blueprint $table) {
+                    if (!Schema::hasColumn('participants', 'nik')) {
+                        $table->string('nik', 16)->nullable()->after('registration_number');
+                    }
+                    if (!Schema::hasColumn('participants', 'gender')) {
+                        $table->string('gender', 20)->nullable()->after('nik');
+                    }
+                    if (!Schema::hasColumn('participants', 'education_type')) {
+                        $table->string('education_type', 50)->default('Siswa/Pelajar')->after('gender');
+                    }
+                    if (!Schema::hasColumn('participants', 'academic_title')) {
+                        $table->string('academic_title', 50)->nullable()->after('education_type');
+                    }
+                    if (!Schema::hasColumn('participants', 'id_card_file')) {
+                        $table->string('id_card_file', 255)->nullable()->after('address');
+                    }
+                    if (!Schema::hasColumn('participants', 'report_sheet_file')) {
+                        $table->string('report_sheet_file', 255)->nullable()->after('id_card_file');
+                    }
+                    if (!Schema::hasColumn('participants', 'certificate_file')) {
+                        $table->string('certificate_file', 255)->nullable()->after('report_sheet_file');
+                    }
+                    if (!Schema::hasColumn('participants', 'diploma_file')) {
+                        $table->string('diploma_file', 255)->nullable()->after('certificate_file');
+                    }
+                    if (!Schema::hasColumn('participants', 'photo_file')) {
+                        $table->string('photo_file', 255)->nullable()->after('diploma_file');
+                    }
+                    if (!Schema::hasColumn('participants', 'portfolio_file')) {
+                        $table->string('portfolio_file', 255)->nullable()->after('photo_file');
+                    }
+                });
             }
         } catch (\Throwable $e) {
             // Kolom sudah ada atau driver mengunci skema

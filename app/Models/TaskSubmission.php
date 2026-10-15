@@ -19,6 +19,9 @@ class TaskSubmission extends Model
         'participant_id',
         'user_id',
         'submission_content',
+        'file_path',
+        'file_name',
+        'file_type',
         'status',
         'is_revised',
         'revision_count',
@@ -29,6 +32,41 @@ class TaskSubmission extends Model
         'is_revised' => 'boolean',
         'revision_count' => 'integer',
     ];
+
+    protected $appends = [
+        'file_url',
+        'is_image',
+    ];
+
+    public function getFileUrlAttribute(): ?string
+    {
+        return $this->fileUrl();
+    }
+
+    public function getIsImageAttribute(): bool
+    {
+        return $this->isImage();
+    }
+
+    /**
+     * Cek apakah berkas yang diunggah berupa gambar.
+     */
+    public function isImage(): bool
+    {
+        if ($this->file_type === 'image') return true;
+        if (!$this->file_path) return false;
+        $ext = strtolower(pathinfo($this->file_path, PATHINFO_EXTENSION));
+        return in_array($ext, ['jpg', 'jpeg', 'png', 'webp', 'gif', 'svg']);
+    }
+
+    /**
+     * URL aset publik untuk file yang diunggah.
+     */
+    public function fileUrl(): ?string
+    {
+        if (!$this->file_path) return null;
+        return asset($this->file_path);
+    }
 
     public function task()
     {
